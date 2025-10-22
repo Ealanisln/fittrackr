@@ -50,6 +50,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    labels:
+      - "coolify.managed=true"
+      - "coolify.port=3001"
     environment:
       NODE_ENV: production
       PORT: ${API_PORT:-3001}
@@ -82,6 +85,9 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    labels:
+      - "coolify.managed=true"
+      - "coolify.port=80"
     # Coolify proxy will handle external routing
     expose:
       - "80"
