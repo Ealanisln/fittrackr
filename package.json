@@ -1,0 +1,25 @@
+{
+  "name": "fittrackr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FitTrackr - AI-powered fitness tracking platform",
+  "scripts": {
+    "dev": "pnpm --filter @fittrack/web dev & pnpm --filter @fittrack/api dev",
+    "dev:web": "pnpm --filter @fittrack/web dev",
+    "dev:api": "pnpm --filter @fittrack/api dev",
+    "build": "pnpm --filter @fittrack/web build && pnpm --filter @fittrack/api build",
+    "db:push": "pnpm --filter @fittrack/database db:push",
+    "db:migrate": "pnpm --filter @fittrack/database db:migrate",
+    "db:studio": "pnpm --filter @fittrack/database db:studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
