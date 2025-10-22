@@ -16,6 +16,9 @@ COPY apps/api ./apps/api
 # Install dependencies (including dev dependencies for tsx)
 RUN pnpm install --frozen-lockfile
 
+# Generate Prisma Client
+RUN pnpm --filter @fittrack/database db:generate
+
 # Create uploads directory
 RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 
