@@ -33,7 +33,7 @@ services:
     # ports:
     #   - "${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $REDIS_PASSWORD ping || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
