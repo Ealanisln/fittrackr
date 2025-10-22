@@ -1,0 +1,5 @@
+@prisma/client
+@prisma/engines
+esbuild
+prisma
+tesseract.js

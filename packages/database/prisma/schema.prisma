@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User & Authentication
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  plan          Plan      @default(FREE)
+
+  workouts      Workout[]
+  integrations  Integration[]
+  sessions      Session[]
+  accounts      Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("verification")
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// ============================================
+// Workouts
+// ============================================
+
+model Workout {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date              DateTime
+  workoutType       String?  @map("workout_type") // e.g., "Outdoor Walk", "Run", "Cycling"
+  workoutTime       String   @map("workout_time") // "HH:MM:SS"
+  elapsedTime       String?  @map("elapsed_time") // "HH:MM:SS"
+  distanceKm        Float    @map("distance_km")
+  activeKcal        Int      @map("active_kcal")
+  totalKcal         Int      @map("total_kcal")
+  elevationGainM    Int      @map("elevation_gain_m")
+  avgPace           String   @map("avg_pace") // "MM'SS\"/km"
+  avgHeartRateBpm   Int      @map("avg_heart_rate_bpm")
+  effortLevel       Int      @map("effort_level") // 1-10
+  effortDescription String   @map("effort_description") // "Easy", "Moderate", "Hard"
+
+  splits            Split[]
+
+  source            Source   @default(MANUAL)
+  sourceFileUrl     String?  @map("source_file_url") // Path to original screenshot/file
+  sourceMetadata    Json?    @map("source_metadata") // Additional metadata from source
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([date])
+  @@map("workouts")
+}
+
+enum Source {
+  MANUAL
+  SCREENSHOT
+  STRAVA
+  GARMIN
+  GPX_FILE
+  FIT_FILE
+  APPLE_HEALTH
+}
+
+// ============================================
+// Workout Splits
+// ============================================
+
+model Split {
+  id              String  @id @default(cuid())
+  workoutId       String  @map("workout_id")
+  workout         Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  splitNumber     Int     @map("split_number")
+  time            String  // "MM:SS"
+  pace            String  // "MM'SS\""
+  heartRateBpm    Int     @map("heart_rate_bpm")
+
+  @@index([workoutId])
+  @@map("splits")
+}
+
+// ============================================
+// Integrations
+// ============================================
+
+model Integration {
+  id            String           @id @default(cuid())
+  userId        String           @map("user_id")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          IntegrationType
+  accessToken   String           @map("access_token") @db.Text // Encrypted
+  refreshToken  String?          @map("refresh_token") @db.Text // Encrypted
+  expiresAt     DateTime?        @map("expires_at")
+
+  isActive      Boolean          @default(true) @map("is_active")
+  metadata      Json?            // Additional provider-specific data
+
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, type])
+  @@map("integrations")
+}
+
+enum IntegrationType {
+  STRAVA
+  GARMIN
+  APPLE_HEALTH
+  POLAR
+  FITBIT
+}
