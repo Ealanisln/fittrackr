@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Activity, CheckCircle, XCircle, RefreshCw, Link as LinkIcon, Unlink } from 'lucide-react';
+import { Activity, CheckCircle, RefreshCw, Link as LinkIcon, Unlink } from 'lucide-react';
 
 interface Integration {
   id: string;
