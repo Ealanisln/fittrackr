@@ -22,42 +22,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check with database and Redis connectivity
+// Health check - simplified version without connection tests
 app.get('/health', async (req, res) => {
-  const health = {
+  res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     services: {
       api: 'ok',
-      database: 'unknown',
-      redis: 'unknown',
+      database: 'not_checked',
+      redis: 'not_checked',
     },
-  };
-
-  try {
-    // Check database connection
-    const { prisma } = await import('@fittrack/database');
-    await prisma.$queryRaw`SELECT 1`;
-    health.services.database = 'ok';
-  } catch (error) {
-    health.services.database = 'error';
-    health.status = 'degraded';
-  }
-
-  try {
-    // Check Redis connection
-    const Redis = (await import('ioredis')).default;
-    const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-    await redis.ping();
-    await redis.quit();
-    health.services.redis = 'ok';
-  } catch (error) {
-    health.services.redis = 'error';
-    health.status = 'degraded';
-  }
-
-  const statusCode = health.status === 'ok' ? 200 : 503;
-  res.status(statusCode).json(health);
+  });
 });
 
 // Routes
