@@ -52,6 +52,9 @@ services:
         condition: service_healthy
     labels:
       - "traefik.http.services.https-0-to088g4kkwgso80kocgkkckg-api.loadbalancer.server.port=3001"
+    networks:
+      - default
+      - coolify
     environment:
       NODE_ENV: production
       PORT: ${API_PORT:-3001}
@@ -86,6 +89,9 @@ services:
       - api
     labels:
       - "traefik.http.services.https-0-to088g4kkwgso80kocgkkckg-web.loadbalancer.server.port=80"
+    networks:
+      - default
+      - coolify
     # Coolify proxy will handle external routing
     expose:
       - "80"
@@ -101,3 +107,5 @@ volumes:
 networks:
   default:
     name: fittrackr-network
+  coolify:
+    external: true
