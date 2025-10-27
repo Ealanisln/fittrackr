@@ -69,6 +69,9 @@ services:
       GOOGLE_FIT_CLIENT_SECRET: ${GOOGLE_FIT_CLIENT_SECRET}
     volumes:
       - api_uploads:/app/uploads
+    networks:
+      - default
+      - coolify
     # Coolify proxy will handle external routing
     expose:
       - "3001"
@@ -86,6 +89,9 @@ services:
       - api
     labels:
       - "traefik.http.services.https-0-to088g4kkwgso80kocgkkckg-web.loadbalancer.server.port=80"
+    networks:
+      - default
+      - coolify
     # Coolify proxy will handle external routing
     expose:
       - "80"
@@ -101,3 +107,5 @@ volumes:
 networks:
   default:
     name: fittrackr-network
+  coolify:
+    external: true
