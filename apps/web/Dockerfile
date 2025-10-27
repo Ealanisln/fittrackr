@@ -6,6 +6,9 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 WORKDIR /app
 
+# Accept build argument for API URL
+ARG VITE_API_URL=https://api.fittrackr.me
+
 # Copy root package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
@@ -16,8 +19,8 @@ COPY apps/web ./apps/web
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build the web app
-RUN pnpm --filter @fittrack/web build
+# Build the web app with the provided API URL
+RUN VITE_API_URL=${VITE_API_URL} pnpm --filter @fittrack/web build
 
 # Production stage - using nginx to serve static files
 FROM nginx:alpine AS runner
