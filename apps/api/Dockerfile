@@ -16,21 +16,19 @@ COPY apps/api ./apps/api
 # Install dependencies (including dev dependencies for tsx)
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma Client
-RUN pnpm --filter @fittrack/database db:generate
+# Copy start script
+COPY apps/api/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Create uploads directory
 RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
-
-# Use non-root user
-USER node
 
 # Expose port
 EXPOSE 3001
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application with tsx
-CMD ["pnpm", "--filter", "@fittrack/api", "start:prod"]
+# Start the application with the start script (runs as root to generate Prisma client)
+CMD ["/app/start.sh"]
