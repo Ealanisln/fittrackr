@@ -59,9 +59,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-fittrack}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: ${AUTH_URL:-http://api:3001}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      CLIENT_URL: ${CLIENT_URL:-http://web:80}
+      AUTH_URL: ${AUTH_URL:-https://api.fittrackr.me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      CLIENT_URL: ${CLIENT_URL:-https://fittrackr.me}
       UPLOAD_DIR: /app/uploads
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
       STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID}
@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+        VITE_API_URL: ${VITE_API_URL:-https://api.fittrackr.me}
     container_name: fittrackr-web
     restart: unless-stopped
     depends_on:
