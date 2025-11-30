@@ -3,6 +3,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2, Link as LinkIcon, FileUp } from 'lucide-react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { UploadWorkout } from '../components/UploadWorkout';
+import { API_URL } from '../lib/api';
 import type { Workout } from '../types/workout';
 
 export function Dashboard() {
@@ -16,7 +17,7 @@ export function Dashboard() {
     const fetchData = async () => {
       try {
         console.log('🔍 Fetching workouts from API...');
-        const response = await fetch('http://localhost:3001/api/workouts', {
+        const response = await fetch(`${API_URL}/api/workouts`, {
           credentials: 'include', // Send cookies for authentication
         });
         console.log('📡 Response status:', response.status);
@@ -156,7 +157,7 @@ export function Dashboard() {
 
     setDeleting(workoutId);
     try {
-      const response = await fetch(`http://localhost:3001/api/workouts/${workoutId}`, {
+      const response = await fetch(`${API_URL}/api/workouts/${workoutId}`, {
         method: 'DELETE',
         credentials: 'include', // Send cookies for authentication
       });

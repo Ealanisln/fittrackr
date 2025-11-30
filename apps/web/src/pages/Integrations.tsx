@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Activity, CheckCircle, RefreshCw, Link as LinkIcon, Unlink } from 'lucide-react';
+import { API_URL } from '../lib/api';
 
 interface Integration {
   id: string;
@@ -35,7 +36,7 @@ export function Integrations() {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/integrations', {
+      const response = await fetch(`${API_URL}/api/integrations`, {
         credentials: 'include',
       });
       const result = await response.json();
@@ -52,7 +53,7 @@ export function Integrations() {
 
   const connectStrava = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/integrations/strava/auth', {
+      const response = await fetch(`${API_URL}/api/integrations/strava/auth`, {
         credentials: 'include',
       });
       const result = await response.json();
@@ -75,7 +76,7 @@ export function Integrations() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/integrations/strava', {
+      const response = await fetch(`${API_URL}/api/integrations/strava`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -98,7 +99,7 @@ export function Integrations() {
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/integrations/strava/sync', {
+      const response = await fetch(`${API_URL}/api/integrations/strava/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

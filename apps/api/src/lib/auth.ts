@@ -9,7 +9,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  trustedOrigins: ["http://localhost:5173"], // Frontend URL
+  trustedOrigins: [process.env.CLIENT_URL || "http://localhost:5173"],
 });
 
 export type Session = typeof auth.$Infer.Session;

@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export async function fetchWorkouts() {
   const response = await fetch(`${API_URL}/api/workouts`);

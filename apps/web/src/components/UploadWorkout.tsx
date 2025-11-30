@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, Loader2, CheckCircle2, XCircle, Image as ImageIcon } from 'lucide-react';
+import { API_URL } from '../lib/api';
 
 interface UploadWorkoutProps {
   onUploadComplete?: () => void;
@@ -34,7 +35,7 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
       formData.append('screenshot', file);
       formData.append('userId', 'cmh1b2myi0000gplhnwmt5o4h'); // TODO: Get from auth
 
-      const response = await fetch('http://localhost:3001/api/upload', {
+      const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         credentials: 'include', // Send cookies for authentication
         body: formData,

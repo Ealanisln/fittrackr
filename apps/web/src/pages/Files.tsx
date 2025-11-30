@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { FileUp, CheckCircle, XCircle, Upload as UploadIcon, FileText, Activity } from 'lucide-react';
+import { API_URL } from '../lib/api';
 
 interface UploadResult {
   fileName: string;
@@ -76,7 +77,7 @@ export function Files() {
         const formData = new FormData();
         formData.append('file', selectedFiles[0]);
 
-        const response = await fetch('http://localhost:3001/api/files/upload', {
+        const response = await fetch(`${API_URL}/api/files/upload`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
@@ -110,7 +111,7 @@ export function Files() {
           formData.append('files', file);
         });
 
-        const response = await fetch('http://localhost:3001/api/files/upload-multiple', {
+        const response = await fetch(`${API_URL}/api/files/upload-multiple`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
