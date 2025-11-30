@@ -16,10 +16,17 @@ export function Login() {
     setLoading(true);
 
     try {
-      await signIn.email({
+      const result = await signIn.email({
         email,
         password,
       });
+
+      if (result.error) {
+        // Handle error from better-auth
+        const errorMessage = result.error.message || result.error.code || 'Failed to sign in';
+        setError(errorMessage);
+        return;
+      }
 
       // Redirect to dashboard on success
       navigate('/');
