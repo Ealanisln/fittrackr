@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, Area, ReferenceLine, Cell } from 'recharts';
 import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2 } from 'lucide-react';
 import { Layout } from '../components/layout';
 import { StatCard } from '../components/dashboard/StatCard';
 import { UploadWorkout } from '../components/UploadWorkout';
-import { API_URL } from '../lib/api';
-import type { Workout } from '../types/workout';
+import { API_URL, fetchInsights } from '../lib/api';
+import type { Workout, InsightsResponse } from '../types/workout';
 
 export function Dashboard() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [view, setView] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [insights, setInsights] = useState<InsightsResponse | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch workouts from API
@@ -150,6 +152,26 @@ export function Dashboard() {
     fetchData();
   }, []);
 
+  // Fetch insights when workouts are loaded
+  useEffect(() => {
+    const loadInsights = async () => {
+      if (loading || workouts.length === 0) {
+        setInsightsLoading(false);
+        return;
+      }
+      try {
+        const data = await fetchInsights();
+        setInsights(data);
+      } catch (error) {
+        console.error('Error fetching insights:', error);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+
+    loadInsights();
+  }, [loading, workouts.length]);
+
   // Delete workout handler
   const handleDelete = async (workoutId: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este entrenamiento?')) {
@@ -198,24 +220,101 @@ export function Dashboard() {
     'Elevación (m)': w.elevationGainM
   })).reverse();
 
-  const effortData = [
-    {
-      effort: 'Intensidad',
-      value: totalWorkouts > 0 ? (workouts.reduce((sum, w) => sum + w.effortLevel, 0) / totalWorkouts).toFixed(1) : 0
-    },
-    {
-      effort: 'Consistencia',
-      value: 9.2
-    },
-    {
-      effort: 'Progresión',
-      value: 8.5
-    },
-    {
-      effort: 'Variedad',
-      value: 8.8
+  // Datos mejorados para la gráfica de calorías con comparación
+  const caloriesChartData = workouts.map(w => {
+    const cals = w.activeKcal;
+    const diffFromAvg = avgCalories > 0 ? ((cals - avgCalories) / avgCalories * 100) : 0;
+    return {
+      date: new Date(w.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+      fullDate: new Date(w.date).toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' }),
+      calories: cals,
+      average: avgCalories,
+      isAboveAvg: cals >= avgCalories,
+      diffPercent: diffFromAvg,
+      distanceKm: w.distanceKm,
+      workoutTime: w.workoutTime,
+    };
+  }).reverse();
+
+  // Calcular tendencia (media móvil de 3)
+  const caloriesWithTrend = caloriesChartData.map((item, index, arr) => {
+    if (index < 2) return { ...item, trend: item.calories };
+    const avg3 = Math.round((arr[index].calories + arr[index-1].calories + arr[index-2].calories) / 3);
+    return { ...item, trend: avg3 };
+  });
+
+  // Calcular métricas reales de performance
+  const calculatePerformanceMetrics = () => {
+    if (totalWorkouts === 0) {
+      return [
+        { metric: 'Intensidad', value: 0, fullMark: 10, description: 'Sin datos' },
+        { metric: 'Consistencia', value: 0, fullMark: 10, description: 'Sin datos' },
+        { metric: 'Progresión', value: 0, fullMark: 10, description: 'Sin datos' },
+        { metric: 'Volumen', value: 0, fullMark: 10, description: 'Sin datos' },
+      ];
     }
-  ];
+
+    // Intensidad: promedio de effort level
+    const avgIntensity = workouts.reduce((sum, w) => sum + w.effortLevel, 0) / totalWorkouts;
+
+    // Consistencia: entrenamientos por semana (últimos 30 días)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentWorkouts = workouts.filter(w => new Date(w.date) >= thirtyDaysAgo);
+    const workoutsPerWeek = (recentWorkouts.length / 30) * 7;
+    // Escala: 0 workouts = 0, 3+ workouts/week = 10
+    const consistencyScore = Math.min(10, (workoutsPerWeek / 3) * 10);
+
+    // Progresión: comparar últimos 3 workouts vs anteriores 3
+    let progressionScore = 5; // neutral
+    if (totalWorkouts >= 4) {
+      const sortedByDate = [...workouts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const recent3 = sortedByDate.slice(0, 3);
+      const older3 = sortedByDate.slice(3, 6);
+      if (older3.length > 0) {
+        const recentAvgCal = recent3.reduce((s, w) => s + w.activeKcal, 0) / recent3.length;
+        const olderAvgCal = older3.reduce((s, w) => s + w.activeKcal, 0) / older3.length;
+        const improvement = ((recentAvgCal - olderAvgCal) / olderAvgCal) * 100;
+        // -20% o menos = 2, 0% = 5, +20% o más = 10
+        progressionScore = Math.max(2, Math.min(10, 5 + (improvement / 4)));
+      }
+    }
+
+    // Volumen: calorías promedio vs objetivo (300 kcal = 10)
+    const volumeScore = Math.min(10, (avgCalories / 300) * 10);
+
+    return [
+      {
+        metric: 'Intensidad',
+        value: Number(avgIntensity.toFixed(1)),
+        fullMark: 10,
+        description: `Esfuerzo promedio: ${avgIntensity.toFixed(1)}/10`
+      },
+      {
+        metric: 'Consistencia',
+        value: Number(consistencyScore.toFixed(1)),
+        fullMark: 10,
+        description: `${workoutsPerWeek.toFixed(1)} entrenamientos/semana`
+      },
+      {
+        metric: 'Progresión',
+        value: Number(progressionScore.toFixed(1)),
+        fullMark: 10,
+        description: progressionScore >= 5 ? 'Mejorando' : 'Necesita impulso'
+      },
+      {
+        metric: 'Volumen',
+        value: Number(volumeScore.toFixed(1)),
+        fullMark: 10,
+        description: `${avgCalories} kcal promedio`
+      },
+    ];
+  };
+
+  const performanceData = calculatePerformanceMetrics();
+  const overallScore = totalWorkouts > 0
+    ? (performanceData.reduce((sum, d) => sum + d.value, 0) / performanceData.length).toFixed(1)
+    : '0';
 
   if (loading) {
     return (
@@ -288,44 +387,225 @@ export function Dashboard() {
               />
             </div>
 
-              {/* Calorías por Entrenamiento */}
+              {/* Calorías por Entrenamiento - Mejorado */}
               <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 shadow-xl">
-                <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
-                  <Flame className="text-orange-500" size={20} />
-                  Calorias Quemadas por Entrenamiento
-                </h2>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6' }}
-                  />
-                  <Bar dataKey="Calorías Activas" fill="#F97316" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-4">
+                  <h2 className="text-lg md:text-2xl font-bold text-white flex items-center gap-2">
+                    <Flame className="text-orange-500" size={20} />
+                    Calorías Quemadas por Entrenamiento
+                  </h2>
+                  <div className="flex items-center gap-4 mt-2 md:mt-0 text-xs md:text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                      <span className="text-slate-400">Sobre promedio</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                      <span className="text-slate-400">Bajo promedio</span>
+                    </div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={280}>
+                  <ComposedChart data={caloriesWithTrend}>
+                    <defs>
+                      <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#9CA3AF"
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: '#374151' }}
+                    />
+                    <YAxis
+                      stroke="#9CA3AF"
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: '#374151' }}
+                      domain={[0, 'dataMax + 50']}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          const diffSign = data.diffPercent >= 0 ? '+' : '';
+                          return (
+                            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl">
+                              <p className="text-white font-medium text-sm mb-2">{data.fullDate}</p>
+                              <div className="space-y-1">
+                                <p className="text-orange-400 font-bold text-lg">{data.calories} kcal</p>
+                                <p className={`text-sm font-medium ${data.isAboveAvg ? 'text-emerald-400' : 'text-orange-400'}`}>
+                                  {diffSign}{data.diffPercent.toFixed(0)}% vs promedio ({avgCalories} kcal)
+                                </p>
+                                <hr className="border-slate-700 my-2" />
+                                <p className="text-slate-400 text-xs">{data.distanceKm} km • {data.workoutTime}</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    {/* Área de tendencia */}
+                    <Area
+                      type="monotone"
+                      dataKey="trend"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      fill="url(#trendGradient)"
+                      name="Tendencia"
+                    />
+                    {/* Línea de promedio */}
+                    <ReferenceLine
+                      y={avgCalories}
+                      stroke="#94A3B8"
+                      strokeDasharray="5 5"
+                      strokeWidth={2}
+                      label={{
+                        value: `Promedio: ${avgCalories}`,
+                        position: 'right',
+                        fill: '#94A3B8',
+                        fontSize: 11
+                      }}
+                    />
+                    {/* Barras con colores dinámicos */}
+                    <Bar dataKey="calories" radius={[6, 6, 0, 0]} name="Calorías">
+                      {caloriesWithTrend.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.isAboveAvg ? '#10B981' : '#F97316'}
+                        />
+                      ))}
+                    </Bar>
+                  </ComposedChart>
+                </ResponsiveContainer>
+
+                {/* Stats rápidas debajo de la gráfica */}
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-700">
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Mejor sesión</p>
+                    <p className="text-emerald-400 font-bold text-lg">{maxCalories} kcal</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Promedio</p>
+                    <p className="text-white font-bold text-lg">{avgCalories} kcal</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Sobre promedio</p>
+                    <p className="text-blue-400 font-bold text-lg">{caloriesWithTrend.filter(d => d.isAboveAvg).length}/{totalWorkouts}</p>
+                  </div>
+                </div>
+
                 <div className="mt-3 md:mt-4 p-3 md:p-4 bg-slate-700/50 rounded-lg">
-                  <p className="text-slate-300 text-xs md:text-sm">
-                    <span className="font-bold text-orange-400">Destacado:</span> Tu entrenamiento del 7 de octubre alcanzo 423 kcal activas,
-                    superando tu objetivo actual en un 5.8%.
-                  </p>
+                  {workouts.length === 0 ? (
+                    <p className="text-slate-400 text-xs md:text-sm">
+                      <span className="font-bold text-orange-400">Comenzar:</span> Sube tu primer entrenamiento para ver estadisticas personalizadas y recomendaciones de AI.
+                    </p>
+                  ) : insightsLoading ? (
+                    <p className="text-slate-400 text-xs md:text-sm animate-pulse">Analizando tus entrenamientos...</p>
+                  ) : insights?.highlight ? (
+                    <p className="text-slate-300 text-xs md:text-sm">
+                      <span className="font-bold text-orange-400">{insights.highlight.title}:</span> {insights.highlight.content}
+                    </p>
+                  ) : (
+                    <p className="text-slate-400 text-xs md:text-sm">
+                      <span className="font-bold text-orange-400">Tip:</span> Sigue subiendo entrenamientos para obtener analisis mas precisos.
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Performance Radar */}
+              {/* Performance Radar - Mejorado */}
               <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
-                <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4">Analisis de Performance</h2>
-                <ResponsiveContainer width="100%" height={250}>
-                  <RadarChart data={effortData}>
-                  <PolarGrid stroke="#374151" />
-                  <PolarAngleAxis dataKey="effort" stroke="#9CA3AF" />
-                  <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="#9CA3AF" />
-                  <Radar name="Tu Performance" dataKey="value" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.6} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-4">
+                  <h2 className="text-lg md:text-2xl font-bold text-white">Análisis de Performance</h2>
+                  <div className="flex items-center gap-2 mt-2 md:mt-0">
+                    <span className="text-slate-400 text-sm">Score general:</span>
+                    <span className={`text-xl font-bold ${
+                      Number(overallScore) >= 7 ? 'text-emerald-400' :
+                      Number(overallScore) >= 5 ? 'text-yellow-400' : 'text-orange-400'
+                    }`}>
+                      {overallScore}/10
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  {/* Radar Chart */}
+                  <ResponsiveContainer width="100%" height={280}>
+                    <RadarChart data={performanceData} margin={{ top: 40, right: 40, bottom: 40, left: 40 }}>
+                      <PolarGrid stroke="#374151" />
+                      <PolarAngleAxis
+                        dataKey="metric"
+                        stroke="#9CA3AF"
+                        tick={{ fontSize: 12, fill: '#9CA3AF', dy: 4 }}
+                        tickLine={false}
+                      />
+                      <PolarRadiusAxis
+                        angle={90}
+                        domain={[0, 10]}
+                        stroke="#374151"
+                        tick={false}
+                        axisLine={false}
+                        tickCount={6}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl">
+                                <p className="text-white font-medium">{data.metric}</p>
+                                <p className="text-blue-400 font-bold text-lg">{data.value}/10</p>
+                                <p className="text-slate-400 text-xs mt-1">{data.description}</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Radar
+                        name="Performance"
+                        dataKey="value"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        fill="#3B82F6"
+                        fillOpacity={0.4}
+                        dot={{ r: 4, fill: '#3B82F6' }}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+
+                  {/* Métricas detalladas */}
+                  <div className="space-y-3">
+                    {performanceData.map((item) => (
+                      <div key={item.metric} className="bg-slate-700/30 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-slate-300 text-sm font-medium">{item.metric}</span>
+                          <span className={`font-bold ${
+                            item.value >= 7 ? 'text-emerald-400' :
+                            item.value >= 5 ? 'text-yellow-400' : 'text-orange-400'
+                          }`}>
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              item.value >= 7 ? 'bg-emerald-500' :
+                              item.value >= 5 ? 'bg-yellow-500' : 'bg-orange-500'
+                            }`}
+                            style={{ width: `${(item.value / 10) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-slate-500 text-xs mt-1">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
           </>
         )}
 
@@ -462,21 +742,58 @@ export function Dashboard() {
           {/* Recomendaciones */}
           {view !== 'upload' && (
             <div className="mt-6 md:mt-8 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-4 md:p-6 shadow-xl">
-              <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Recomendaciones para 500 kcal</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-white">
-                <div className="bg-white/10 rounded-lg p-3 md:p-4">
-                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Extender Sesiones</p>
-                  <p className="text-xs md:text-sm text-white/90">40 min a 50-55 min te darian 500 kcal</p>
-                </div>
-                <div className="bg-white/10 rounded-lg p-3 md:p-4">
-                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Mas Intensidad</p>
-                  <p className="text-xs md:text-sm text-white/90">Manten ritmo alto desde el inicio</p>
-                </div>
-                <div className="bg-white/10 rounded-lg p-3 md:p-4">
-                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Sesion Larga</p>
-                  <p className="text-xs md:text-sm text-white/90">Una sesion de 90 min te da 500+ kcal</p>
-                </div>
-              </div>
+              {workouts.length === 0 ? (
+                <>
+                  <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Empieza Tu Viaje</h3>
+                  <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                    <p className="text-white/90 text-xs md:text-sm">
+                      Sube tu primer entrenamiento para recibir recomendaciones personalizadas basadas en tu rendimiento.
+                    </p>
+                  </div>
+                </>
+              ) : insightsLoading ? (
+                <>
+                  <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Analizando...</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="bg-white/10 rounded-lg p-3 md:p-4 animate-pulse">
+                        <div className="h-4 bg-white/20 rounded mb-2 w-3/4"></div>
+                        <div className="h-3 bg-white/10 rounded w-full"></div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : insights?.recommendations && insights.recommendations.length > 0 ? (
+                <>
+                  <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Recomendaciones para Ti</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-white">
+                    {insights.recommendations.slice(0, 3).map((rec, index) => (
+                      <div key={rec.id || index} className="bg-white/10 rounded-lg p-3 md:p-4">
+                        <p className="font-bold text-sm md:text-base mb-1 md:mb-2">{rec.title}</p>
+                        <p className="text-xs md:text-sm text-white/90">{rec.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Consejos Generales</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-white">
+                    <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                      <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Consistencia</p>
+                      <p className="text-xs md:text-sm text-white/90">Mantener una rutina regular es clave para el progreso</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                      <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Variedad</p>
+                      <p className="text-xs md:text-sm text-white/90">Varia tus entrenamientos para mejores resultados</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                      <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Recuperacion</p>
+                      <p className="text-xs md:text-sm text-white/90">Incluye dias de descanso entre entrenamientos intensos</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

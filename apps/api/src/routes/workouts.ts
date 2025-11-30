@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '@fittrack/database';
 import { requireAuth } from '../middleware/auth';
+import { generateInsightsForUser } from '../services/insights.service.js';
 
 const router = Router();
 
@@ -81,11 +82,17 @@ router.post('/', async (req, res) => {
   try {
     const { splits, ...workoutData } = req.body;
 
+    // Parse date avoiding timezone issues by treating it as noon local time
+    const dateStr = workoutData.date;
+    const workoutDate = typeof dateStr === 'string' && !dateStr.includes('T')
+      ? new Date(`${dateStr}T12:00:00`)
+      : new Date(dateStr);
+
     const workout = await prisma.workout.create({
       data: {
         ...workoutData,
         userId: req.user!.id, // Automatically set the user ID
-        date: new Date(workoutData.date),
+        date: workoutDate,
         splits: splits ? {
           create: splits
         } : undefined
@@ -93,6 +100,11 @@ router.post('/', async (req, res) => {
       include: {
         splits: true
       }
+    });
+
+    // Trigger insight generation asynchronously
+    generateInsightsForUser(req.user!.id, workout).catch((err) => {
+      console.error('Failed to generate insights:', err);
     });
 
     res.status(201).json({

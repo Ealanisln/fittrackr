@@ -7,6 +7,7 @@ import uploadRouter from './routes/upload.js';
 import authRouter from './routes/auth.js';
 import integrationsRouter from './routes/integrations.js';
 import filesRouter from './routes/files.js';
+import insightsRouter from './routes/insights.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use('/api/workouts', workoutsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/integrations', integrationsRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/insights', insightsRouter);
 
 // Start server
 app.listen(PORT, () => {

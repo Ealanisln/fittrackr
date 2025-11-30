@@ -15,3 +15,14 @@ export async function fetchWorkout(id: string) {
   }
   return response.json();
 }
+
+export async function fetchInsights() {
+  const response = await fetch(`${API_URL}/api/insights`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch insights');
+  }
+  const result = await response.json();
+  return result.data;
+}

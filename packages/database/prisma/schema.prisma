@@ -26,6 +26,7 @@ model User {
   integrations  Integration[]
   sessions      Session[]
   accounts      Account[]
+  insights      WorkoutInsight[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,6 +107,7 @@ model Workout {
   effortDescription String   @map("effort_description") // "Easy", "Moderate", "Hard"
 
   splits            Split[]
+  insights          WorkoutInsight[]
 
   source            Source   @default(MANUAL)
   sourceFileUrl     String?  @map("source_file_url") // Path to original screenshot/file
@@ -177,4 +179,37 @@ enum IntegrationType {
   APPLE_HEALTH
   POLAR
   FITBIT
+}
+
+// ============================================
+// AI-Generated Insights
+// ============================================
+
+model WorkoutInsight {
+  id              String      @id @default(cuid())
+  userId          String      @map("user_id")
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type            InsightType
+  title           String
+  content         String      @db.Text
+
+  workoutId       String?     @map("workout_id")
+  workout         Workout?    @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+
+  workoutCount    Int         @map("workout_count") // Workouts analyzed when generated
+  generatedAt     DateTime    @default(now()) @map("generated_at")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([type])
+  @@index([workoutId])
+  @@map("workout_insights")
+}
+
+enum InsightType {
+  HIGHLIGHT
+  RECOMMENDATION
 }

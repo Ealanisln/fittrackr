@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import { requireAuth } from '../middleware/auth.js';
 import { importGPXWorkout } from '../services/gpx.service.js';
 import { importFITWorkout, importMultipleFITWorkouts } from '../services/fit.service.js';
+import { generateInsightsForUser } from '../services/insights.service.js';
 
 const router = Router();
 
@@ -77,6 +78,13 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
       // Clean up uploaded file
       await fs.unlink(filePath).catch((err) => console.error('Error deleting file:', err));
 
+      // Trigger insight generation asynchronously
+      if (result?.workout) {
+        generateInsightsForUser(userId, result.workout).catch((err) => {
+          console.error('Failed to generate insights:', err);
+        });
+      }
+
       return res.status(201).json({
         success: true,
         data: result,
@@ -133,6 +141,12 @@ router.post('/upload-multiple', requireAuth, upload.array('files', 10), async (r
             status: 'imported',
             workout: result.workout,
           });
+          // Trigger insight generation for GPX
+          if (result?.workout) {
+            generateInsightsForUser(userId, result.workout).catch((err) => {
+              console.error('Failed to generate insights:', err);
+            });
+          }
         } else if (fileExtension === '.fit') {
           const fitBuffer = await fs.readFile(filePath);
           const fitResult = await importFITWorkout(fitBuffer, userId, file.originalname);
@@ -144,6 +158,12 @@ router.post('/upload-multiple', requireAuth, upload.array('files', 10), async (r
               status: 'imported',
               workout: fitResult.workout,
             });
+            // Trigger insight generation for FIT
+            if (fitResult.workout) {
+              generateInsightsForUser(userId, fitResult.workout).catch((err) => {
+                console.error('Failed to generate insights:', err);
+              });
+            }
           } else if (fitResult.duplicate) {
             results.skipped++;
             results.details.push({

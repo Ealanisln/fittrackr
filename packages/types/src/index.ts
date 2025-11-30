@@ -69,3 +69,29 @@ export type OCRResult = z.infer<typeof OCRResultSchema>;
 export type ApiSuccess<T = any> = Omit<z.infer<typeof ApiSuccessSchema>, 'data'> & { data: T };
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 export type ApiResponse<T = any> = ApiSuccess<T> | ApiError;
+
+// ============================================
+// Insight Schemas
+// ============================================
+
+export const InsightTypeEnum = z.enum(['HIGHLIGHT', 'RECOMMENDATION']);
+
+export const WorkoutInsightSchema = z.object({
+  id: z.string().cuid(),
+  userId: z.string().cuid(),
+  type: InsightTypeEnum,
+  title: z.string(),
+  content: z.string(),
+  workoutId: z.string().cuid().nullable().optional(),
+  workoutCount: z.number().int(),
+  generatedAt: z.string().or(z.date()),
+});
+
+export const InsightsResponseSchema = z.object({
+  highlight: WorkoutInsightSchema.nullable(),
+  recommendations: z.array(WorkoutInsightSchema),
+});
+
+export type InsightType = z.infer<typeof InsightTypeEnum>;
+export type WorkoutInsight = z.infer<typeof WorkoutInsightSchema>;
+export type InsightsResponse = z.infer<typeof InsightsResponseSchema>;

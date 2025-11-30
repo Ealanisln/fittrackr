@@ -145,9 +145,24 @@ Return the JSON now:
       throw new Error('Could not extract JSON from Gemini response');
     }
 
-    const workoutData = JSON.parse(jsonMatch[0]);
+    let jsonString = jsonMatch[0];
 
-    return workoutData;
+    // Log the raw JSON for debugging
+    console.log('📝 Raw JSON to parse:', jsonString);
+
+    // Clean up common JSON issues from Gemini
+    // Remove trailing commas before closing brackets/braces
+    jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+    // Replace single quotes with double quotes (if any)
+    // Only do this carefully - not inside already double-quoted strings
+
+    try {
+      const workoutData = JSON.parse(jsonString);
+      return workoutData;
+    } catch (parseError) {
+      console.error('❌ JSON parse error. Raw string:', jsonString);
+      throw parseError;
+    }
   } catch (error) {
     console.error('Error parsing with Gemini:', error);
     throw error;

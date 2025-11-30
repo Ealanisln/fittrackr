@@ -5,6 +5,7 @@ import fs from 'fs';
 import { prisma } from '@fittrack/database';
 import { processWorkoutScreenshot } from '../services/ocr.service.js';
 import { requireAuth } from '../middleware/auth';
+import { generateInsightsForUser } from '../services/insights.service.js';
 
 const router = Router();
 
@@ -42,6 +43,48 @@ const upload = multer({
   }
 });
 
+/**
+ * Check for potential duplicate workouts
+ */
+async function findPotentialDuplicate(
+  userId: string,
+  date: Date,
+  distanceKm: number,
+  activeKcal: number
+) {
+  // Search for workouts on the same date with similar metrics
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const existingWorkouts = await prisma.workout.findMany({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    include: {
+      splits: true,
+    },
+  });
+
+  // Check if any existing workout is similar (within 10% tolerance)
+  for (const existing of existingWorkouts) {
+    const distanceDiff = Math.abs(existing.distanceKm - distanceKm) / Math.max(distanceKm, 0.1);
+    const caloriesDiff = Math.abs(existing.activeKcal - activeKcal) / Math.max(activeKcal, 1);
+
+    // If distance and calories are within 10%, consider it a duplicate
+    if (distanceDiff < 0.1 && caloriesDiff < 0.1) {
+      return existing;
+    }
+  }
+
+  return null;
+}
+
 // POST /api/upload - Upload and process workout screenshot
 router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
   try {
@@ -51,6 +94,8 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
         error: 'No file uploaded'
       });
     }
+
+    const forceUpload = req.body.force === 'true' || req.body.force === true;
 
     console.log(`📤 Processing screenshot: ${req.file.filename}`);
 
@@ -63,11 +108,61 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
     // Create workout in database
     const { splits, ...workoutFields } = result.workoutData;
 
+    // Parse date avoiding timezone issues by treating it as noon local time
+    const dateStr = result.workoutData.date;
+    const workoutDate = dateStr.includes('T')
+      ? new Date(dateStr)
+      : new Date(`${dateStr}T12:00:00`);
+
+    // Check for potential duplicates (unless force flag is set)
+    if (!forceUpload) {
+      const duplicate = await findPotentialDuplicate(
+        req.user!.id,
+        workoutDate,
+        workoutFields.distanceKm || 0,
+        workoutFields.activeKcal || 0
+      );
+
+      if (duplicate) {
+        console.log(`⚠️ Potential duplicate found: ${duplicate.id}`);
+
+        return res.status(409).json({
+          success: false,
+          isDuplicate: true,
+          error: 'Ya existe un entrenamiento similar en esta fecha',
+          existingWorkout: {
+            id: duplicate.id,
+            date: duplicate.date,
+            workoutType: duplicate.workoutType,
+            distanceKm: duplicate.distanceKm,
+            activeKcal: duplicate.activeKcal,
+            workoutTime: duplicate.workoutTime,
+          },
+          parsedWorkout: {
+            date: workoutDate,
+            workoutType: workoutFields.workoutType,
+            distanceKm: workoutFields.distanceKm,
+            activeKcal: workoutFields.activeKcal,
+            workoutTime: workoutFields.workoutTime,
+          },
+          message: '¿Deseas subir este entrenamiento de todas formas?',
+        });
+      }
+    }
+
+    // Provide defaults for required fields that Gemini may not extract
+    const workoutDataWithDefaults = {
+      ...workoutFields,
+      elevationGainM: workoutFields.elevationGainM ?? 0,
+      effortLevel: workoutFields.effortLevel ?? 5,
+      effortDescription: workoutFields.effortDescription ?? 'Moderate',
+    };
+
     const workout = await prisma.workout.create({
       data: {
-        ...workoutFields,
+        ...workoutDataWithDefaults,
         userId: req.user!.id, // Use authenticated user's ID
-        date: new Date(result.workoutData.date),
+        date: workoutDate,
         source: result.source,
         sourceFileUrl: req.file.path,
         sourceMetadata: {
@@ -86,6 +181,11 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
     });
 
     console.log(`✅ Workout created: ${workout.id}`);
+
+    // Trigger insight generation asynchronously
+    generateInsightsForUser(req.user!.id, workout).catch((err) => {
+      console.error('Failed to generate insights:', err);
+    });
 
     res.status(201).json({
       success: true,

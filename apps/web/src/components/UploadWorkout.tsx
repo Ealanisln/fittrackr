@@ -1,6 +1,24 @@
 import { useState, useRef } from 'react';
-import { Upload, Loader2, CheckCircle2, XCircle, Image as ImageIcon } from 'lucide-react';
+import { Upload, Loader2, CheckCircle2, XCircle, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import { API_URL } from '../lib/api';
+
+interface DuplicateInfo {
+  existingWorkout: {
+    id: string;
+    date: string;
+    workoutType: string | null;
+    distanceKm: number;
+    activeKcal: number;
+    workoutTime: string;
+  };
+  parsedWorkout: {
+    date: string;
+    workoutType: string | null;
+    distanceKm: number;
+    activeKcal: number;
+    workoutTime: string;
+  };
+}
 
 interface UploadWorkoutProps {
   onUploadComplete?: () => void;
@@ -11,52 +29,55 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [duplicateInfo, setDuplicateInfo] = useState<DuplicateInfo | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    // Show preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload file
+  const uploadFile = async (file: File, force: boolean = false) => {
     setUploading(true);
     setError(null);
     setSuccess(false);
+    setDuplicateInfo(null);
 
     try {
       const formData = new FormData();
       formData.append('screenshot', file);
-      formData.append('userId', 'cmh1b2myi0000gplhnwmt5o4h'); // TODO: Get from auth
+      if (force) {
+        formData.append('force', 'true');
+      }
 
       const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
-        credentials: 'include', // Send cookies for authentication
+        credentials: 'include',
         body: formData,
       });
 
       const result = await response.json();
 
+      // Handle duplicate detection (409 Conflict)
+      if (response.status === 409 && result.isDuplicate) {
+        setDuplicateInfo({
+          existingWorkout: result.existingWorkout,
+          parsedWorkout: result.parsedWorkout,
+        });
+        setPendingFile(file);
+        setUploading(false);
+        return;
+      }
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'Failed to upload');
       }
 
-      console.log('✅ Upload successful:', result.data);
+      console.log('Upload successful:', result.data);
       setSuccess(true);
       setPreview(null);
+      setPendingFile(null);
 
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
 
-      // Notify parent
       if (onUploadComplete) {
         setTimeout(() => {
           onUploadComplete();
@@ -69,6 +90,34 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
       setError(err instanceof Error ? err.message : 'Failed to upload screenshot');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    await uploadFile(file);
+  };
+
+  const handleForceUpload = async () => {
+    if (pendingFile) {
+      await uploadFile(pendingFile, true);
+    }
+  };
+
+  const handleCancelDuplicate = () => {
+    setDuplicateInfo(null);
+    setPendingFile(null);
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -119,6 +168,46 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
               <p className="text-slate-400 text-xs md:text-sm">
                 Extracting workout data with AI
               </p>
+            </div>
+          ) : duplicateInfo ? (
+            <div className="flex flex-col items-center gap-3 md:gap-4 text-left w-full">
+              <AlertTriangle className="w-10 h-10 md:w-12 md:h-12 text-amber-500" />
+              <p className="text-white font-medium text-sm md:text-base">Posible duplicado detectado</p>
+
+              <div className="w-full bg-slate-700/50 rounded-lg p-3 text-xs md:text-sm">
+                <p className="text-slate-300 mb-2 font-medium">Entrenamiento existente:</p>
+                <div className="text-slate-400 space-y-1">
+                  <p>Fecha: {new Date(duplicateInfo.existingWorkout.date).toLocaleDateString('es-ES')}</p>
+                  <p>Distancia: {duplicateInfo.existingWorkout.distanceKm} km</p>
+                  <p>Calorías: {duplicateInfo.existingWorkout.activeKcal} kcal</p>
+                  <p>Duración: {duplicateInfo.existingWorkout.workoutTime}</p>
+                </div>
+              </div>
+
+              <p className="text-slate-400 text-xs md:text-sm text-center">
+                ¿Deseas subir este entrenamiento de todas formas?
+              </p>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelDuplicate();
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleForceUpload();
+                  }}
+                  className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-colors text-sm font-medium"
+                >
+                  Subir de todos modos
+                </button>
+              </div>
             </div>
           ) : success ? (
             <div className="flex flex-col items-center gap-2 md:gap-3">

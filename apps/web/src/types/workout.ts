@@ -22,3 +22,17 @@ export type Workout = {
   splits?: Split[];
   source: string;
 }
+
+export type WorkoutInsight = {
+  id: string;
+  type: 'HIGHLIGHT' | 'RECOMMENDATION';
+  title: string;
+  content: string;
+  workoutId?: string | null;
+  generatedAt: string;
+}
+
+export type InsightsResponse = {
+  highlight: WorkoutInsight | null;
+  recommendations: WorkoutInsight[];
+}
