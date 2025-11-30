@@ -1,10 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-// Use CUSTOM_DATABASE_URL if available (for Coolify deployments where DATABASE_URL conflicts)
-if (process.env.CUSTOM_DATABASE_URL) {
-  process.env.DATABASE_URL = process.env.CUSTOM_DATABASE_URL;
-}
-
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
