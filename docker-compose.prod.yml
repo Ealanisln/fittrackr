@@ -19,6 +19,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      default:
+        aliases:
+          - fittrackr-db
 
   # Redis Cache
   redis:
@@ -51,7 +55,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: ${API_PORT:-3001}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-fittrack}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@fittrackr-db:5432/${POSTGRES_DB:-fittrack}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_URL: ${AUTH_URL:-http://api:3001}
