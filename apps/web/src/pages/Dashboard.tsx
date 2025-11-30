@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2, Link as LinkIcon, FileUp } from 'lucide-react';
+import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2 } from 'lucide-react';
+import { Layout } from '../components/layout';
 import { StatCard } from '../components/dashboard/StatCard';
 import { UploadWorkout } from '../components/UploadWorkout';
 import { API_URL } from '../lib/api';
@@ -218,60 +219,45 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <p className="text-white text-xl">Cargando...</p>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <p className="text-white text-xl">Cargando...</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Dashboard de Entrenamientos</h1>
-            <p className="text-slate-400">Análisis detallado de tu progreso - Septiembre a Octubre 2025</p>
+    <Layout>
+      <div className="p-4 md:p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-4xl font-bold text-white mb-1 md:mb-2">Dashboard de Entrenamientos</h1>
+            <p className="text-sm md:text-base text-slate-400">Analisis detallado de tu progreso</p>
           </div>
-          <div className="flex gap-2">
-            <a
-              href="/files"
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
-            >
-              <FileUp size={18} />
-              Files
-            </a>
-            <a
-              href="/integrations"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
-            >
-              <LinkIcon size={18} />
-              Integrations
-            </a>
+
+          {/* Navigation Tabs */}
+          <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+            {['overview', 'progress', 'details', 'upload'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setView(tab)}
+                className={`px-4 md:px-6 py-2 rounded-lg font-medium transition-all whitespace-nowrap text-sm md:text-base ${
+                  view === tab
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                {tab === 'overview' ? 'Resumen' : tab === 'progress' ? 'Progreso' : tab === 'details' ? 'Detalles' : 'Upload'}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {/* Navigation */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {['overview', 'progress', 'details', 'upload'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setView(tab)}
-              className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                view === tab
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
-            >
-              {tab === 'overview' ? 'Resumen' : tab === 'progress' ? 'Progreso' : tab === 'details' ? 'Detalles' : 'Upload'}
-            </button>
-          ))}
-        </div>
-
-        {view === 'overview' && (
-          <>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {view === 'overview' && (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <StatCard
                 icon={Flame}
                 title="Calorías Promedio"
@@ -302,14 +288,14 @@ export function Dashboard() {
               />
             </div>
 
-            {/* Calorías por Entrenamiento */}
-            <div className="bg-slate-800 rounded-xl p-6 mb-8 shadow-xl">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <Flame className="text-orange-500" />
-                Calorías Quemadas por Entrenamiento
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
+              {/* Calorías por Entrenamiento */}
+              <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 shadow-xl">
+                <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
+                  <Flame className="text-orange-500" size={20} />
+                  Calorias Quemadas por Entrenamiento
+                </h2>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="date" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
@@ -320,20 +306,19 @@ export function Dashboard() {
                   <Bar dataKey="Calorías Activas" fill="#F97316" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-              <div className="mt-4 p-4 bg-slate-700/50 rounded-lg">
-                <p className="text-slate-300 text-sm">
-                  <span className="font-bold text-orange-400">Destacado:</span> Tu entrenamiento del 7 de octubre alcanzó 423 kcal activas,
-                  superando tu objetivo actual en un 5.8%. Las sesiones más cortas e intensas (13 y 10 de octubre) mantienen un excelente
-                  promedio de ~255 kcal en menos de 40 minutos.
-                </p>
+                <div className="mt-3 md:mt-4 p-3 md:p-4 bg-slate-700/50 rounded-lg">
+                  <p className="text-slate-300 text-xs md:text-sm">
+                    <span className="font-bold text-orange-400">Destacado:</span> Tu entrenamiento del 7 de octubre alcanzo 423 kcal activas,
+                    superando tu objetivo actual en un 5.8%.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Performance Radar */}
-            <div className="bg-slate-800 rounded-xl p-6 shadow-xl">
-              <h2 className="text-2xl font-bold text-white mb-4">Análisis de Performance</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={effortData}>
+              {/* Performance Radar */}
+              <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
+                <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4">Analisis de Performance</h2>
+                <ResponsiveContainer width="100%" height={250}>
+                  <RadarChart data={effortData}>
                   <PolarGrid stroke="#374151" />
                   <PolarAngleAxis dataKey="effort" stroke="#9CA3AF" />
                   <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="#9CA3AF" />
@@ -344,13 +329,13 @@ export function Dashboard() {
           </>
         )}
 
-        {view === 'progress' && (
-          <>
-            {/* Tendencias */}
-            <div className="bg-slate-800 rounded-xl p-6 mb-8 shadow-xl">
-              <h2 className="text-2xl font-bold text-white mb-4">Tendencia de Calorías y Distancia</h2>
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={chartData}>
+          {view === 'progress' && (
+            <>
+              {/* Tendencias */}
+              <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 shadow-xl">
+                <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4">Tendencia de Calorias y Distancia</h2>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="date" stroke="#9CA3AF" />
                   <YAxis yAxisId="left" stroke="#9CA3AF" />
@@ -366,18 +351,18 @@ export function Dashboard() {
               </ResponsiveContainer>
             </div>
 
-            {/* Frecuencia Cardíaca y Elevación */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-800 rounded-xl p-6 shadow-xl">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Heart className="text-pink-500" />
-                  Frecuencia Cardíaca
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="date" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" domain={[110, 160]} />
+              {/* Frecuencia Cardíaca y Elevación */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
+                  <h3 className="text-base md:text-xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
+                    <Heart className="text-pink-500" size={18} />
+                    Frecuencia Cardiaca
+                  </h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="date" stroke="#9CA3AF" />
+                      <YAxis stroke="#9CA3AF" domain={[110, 160]} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
                     />
@@ -386,117 +371,116 @@ export function Dashboard() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="bg-slate-800 rounded-xl p-6 shadow-xl">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Mountain className="text-green-500" />
-                  Elevación Ganada
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="date" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    />
-                    <Bar dataKey="Elevación (m)" fill="#10B981" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </>
-        )}
-
-        {view === 'details' && (
-          <div className="bg-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 className="text-2xl font-bold text-white mb-6">Detalle de Entrenamientos</h2>
-            <div className="space-y-4">
-              {workouts.map((workout) => (
-                <div key={workout.id} className="bg-slate-700/50 rounded-lg p-5 hover:bg-slate-700 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-white font-bold text-lg">
-                        {new Date(workout.date).toLocaleDateString('es-ES', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                      <p className="text-slate-400 text-sm">{workout.workoutTime}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        workout.effortDescription === 'Hard'
-                          ? 'bg-red-500/20 text-red-400'
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}>
-                        {workout.effortDescription}
-                      </span>
-                      <button
-                        onClick={() => handleDelete(workout.id)}
-                        disabled={deleting === workout.id}
-                        className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Eliminar entrenamiento"
-                      >
-                        <Trash2 size={18} className={deleting === workout.id ? 'animate-pulse' : ''} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-slate-400 text-xs">Calorías Activas</p>
-                      <p className="text-orange-400 font-bold text-xl">{workout.activeKcal}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">Distancia</p>
-                      <p className="text-blue-400 font-bold text-xl">{workout.distanceKm} km</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">Ritmo Promedio</p>
-                      <p className="text-cyan-400 font-bold text-xl">{workout.avgPace}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">FC Promedio</p>
-                      <p className="text-pink-400 font-bold text-xl">{workout.avgHeartRateBpm} bpm</p>
-                    </div>
-                  </div>
+                <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
+                  <h3 className="text-base md:text-xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
+                    <Mountain className="text-green-500" size={18} />
+                    Elevacion Ganada
+                  </h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="date" stroke="#9CA3AF" />
+                      <YAxis stroke="#9CA3AF" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="Elevación (m)" fill="#10B981" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            </>
+          )}
 
-        {view === 'upload' && (
-          <UploadWorkout
-            onUploadComplete={() => {
-              // Refresh workouts after upload
-              window.location.reload();
-            }}
-          />
-        )}
-
-        {/* Recomendaciones */}
-        {view !== 'upload' && (
-          <div className="mt-8 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-6 shadow-xl">
-            <h3 className="text-2xl font-bold text-white mb-3">💡 Recomendaciones para 500 kcal</h3>
-            <div className="grid md:grid-cols-3 gap-4 text-white">
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="font-bold mb-2">Opción 1: Extender Sesiones</p>
-                <p className="text-sm text-white/90">Tus entrenamientos de 40 min → 50-55 min te darían las 500 kcal fácilmente</p>
-              </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="font-bold mb-2">Opción 2: Más Intensidad</p>
-                <p className="text-sm text-white/90">Mantén tu ritmo de 8'49"/km más tiempo en lugar de empezar lento</p>
-              </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <p className="font-bold mb-2">Opción 3: Sesión Larga</p>
-                <p className="text-sm text-white/90">Una sesión semanal de 90 min como la del 7 oct te da 500+ kcal</p>
+          {view === 'details' && (
+            <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
+              <h2 className="text-lg md:text-2xl font-bold text-white mb-4 md:mb-6">Detalle de Entrenamientos</h2>
+              <div className="space-y-3 md:space-y-4">
+                {workouts.map((workout) => (
+                  <div key={workout.id} className="bg-slate-700/50 rounded-lg p-3 md:p-5 hover:bg-slate-700 transition-colors">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-0 mb-3">
+                      <div>
+                        <p className="text-white font-bold text-sm md:text-lg">
+                          {new Date(workout.date).toLocaleDateString('es-ES', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </p>
+                        <p className="text-slate-400 text-xs md:text-sm">{workout.workoutTime}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
+                          workout.effortDescription === 'Hard'
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {workout.effortDescription}
+                        </span>
+                        <button
+                          onClick={() => handleDelete(workout.id)}
+                          disabled={deleting === workout.id}
+                          className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
+                          title="Eliminar entrenamiento"
+                        >
+                          <Trash2 size={16} className={deleting === workout.id ? 'animate-pulse' : ''} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                      <div>
+                        <p className="text-slate-400 text-xs">Calorias</p>
+                        <p className="text-orange-400 font-bold text-base md:text-xl">{workout.activeKcal}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs">Distancia</p>
+                        <p className="text-blue-400 font-bold text-base md:text-xl">{workout.distanceKm} km</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs">Ritmo</p>
+                        <p className="text-cyan-400 font-bold text-base md:text-xl">{workout.avgPace}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs">FC Prom</p>
+                        <p className="text-pink-400 font-bold text-base md:text-xl">{workout.avgHeartRateBpm}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {view === 'upload' && (
+            <UploadWorkout
+              onUploadComplete={() => {
+                window.location.reload();
+              }}
+            />
+          )}
+
+          {/* Recomendaciones */}
+          {view !== 'upload' && (
+            <div className="mt-6 md:mt-8 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-4 md:p-6 shadow-xl">
+              <h3 className="text-lg md:text-2xl font-bold text-white mb-2 md:mb-3">Recomendaciones para 500 kcal</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-white">
+                <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Extender Sesiones</p>
+                  <p className="text-xs md:text-sm text-white/90">40 min a 50-55 min te darian 500 kcal</p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Mas Intensidad</p>
+                  <p className="text-xs md:text-sm text-white/90">Manten ritmo alto desde el inicio</p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 md:p-4">
+                  <p className="font-bold text-sm md:text-base mb-1 md:mb-2">Sesion Larga</p>
+                  <p className="text-xs md:text-sm text-white/90">Una sesion de 90 min te da 500+ kcal</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }

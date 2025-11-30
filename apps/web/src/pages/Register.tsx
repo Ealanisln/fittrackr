@@ -57,17 +57,17 @@ export function Register() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Activity className="text-purple-400" size={40} />
-            <h1 className="text-4xl font-bold text-white">FitTrack</h1>
+        <div className="text-center mb-6 md:mb-8">
+          <div className="flex items-center justify-center gap-2 md:gap-3 mb-2">
+            <Activity className="text-purple-400" size={32} />
+            <h1 className="text-2xl md:text-4xl font-bold text-white">FitTrackr</h1>
           </div>
-          <p className="text-slate-400">Track your fitness journey</p>
+          <p className="text-slate-400 text-sm md:text-base">Track your fitness journey</p>
         </div>
 
         {/* Register Form */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-slate-700">
-          <h2 className="text-2xl font-bold text-white mb-6">Create Account</h2>
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-slate-700">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Create Account</h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">

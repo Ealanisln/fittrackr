@@ -20,3 +20,28 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+/* Safe area utilities for iOS devices with notch/home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Ensure minimum touch target sizes on mobile */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
