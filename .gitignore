@@ -39,3 +39,4 @@ lerna-debug.log*
 
 # Docker
 volumes/
+.env.coolify
