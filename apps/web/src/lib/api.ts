@@ -1,7 +1,9 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export async function fetchWorkouts() {
-  const response = await fetch(`${API_URL}/api/workouts`);
+  const response = await fetch(`${API_URL}/api/workouts`, {
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch workouts');
   }
@@ -9,7 +11,9 @@ export async function fetchWorkouts() {
 }
 
 export async function fetchWorkout(id: string) {
-  const response = await fetch(`${API_URL}/api/workouts/${id}`);
+  const response = await fetch(`${API_URL}/api/workouts/${id}`, {
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch workout');
   }
