@@ -29,7 +29,7 @@ export function Files() {
       if (validFiles.length < files.length) {
         setMessage({
           type: 'error',
-          text: 'Some files were skipped. Only .gpx and .fit files are supported.',
+          text: 'Algunos archivos fueron omitidos. Solo se permiten archivos .gpx y .fit.',
         });
         setTimeout(() => setMessage(null), 5000);
       }
@@ -51,7 +51,7 @@ export function Files() {
       if (validFiles.length < files.length) {
         setMessage({
           type: 'error',
-          text: 'Some files were skipped. Only .gpx and .fit files are supported.',
+          text: 'Algunos archivos fueron omitidos. Solo se permiten archivos .gpx y .fit.',
         });
         setTimeout(() => setMessage(null), 5000);
       }
@@ -94,7 +94,7 @@ export function Files() {
               workout: result.data.workout,
             },
           ]);
-          setMessage({ type: 'success', text: 'Workout imported successfully!' });
+          setMessage({ type: 'success', text: '¡Entrenamiento importado exitosamente!' });
         } else {
           setResults([
             {
@@ -124,7 +124,7 @@ export function Files() {
           setResults(result.data.details);
           setMessage({
             type: 'success',
-            text: `Processed ${selectedFiles.length} files: ${result.data.imported} imported, ${result.data.skipped} skipped, ${result.data.errors} errors`,
+            text: `${selectedFiles.length} archivos procesados: ${result.data.imported} importados, ${result.data.skipped} omitidos, ${result.data.errors} errores`,
           });
         } else {
           setMessage({ type: 'error', text: result.error });
@@ -138,7 +138,7 @@ export function Files() {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setMessage({ type: 'error', text: 'Failed to upload files' });
+      setMessage({ type: 'error', text: 'Error al subir archivos' });
     } finally {
       setUploading(false);
     }
@@ -160,8 +160,8 @@ export function Files() {
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <FileUp className="text-purple-400" size={32} />
             <div>
-              <h1 className="text-2xl md:text-4xl font-bold text-white">File Upload</h1>
-              <p className="text-sm md:text-base text-slate-400">Import workouts from GPX or FIT files</p>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">Subir Archivos</h1>
+              <p className="text-sm md:text-base text-slate-400">Importar entrenamientos desde archivos GPX o FIT</p>
             </div>
           </div>
 
@@ -187,8 +187,8 @@ export function Files() {
               onClick={() => fileInputRef.current?.click()}
             >
               <FileUp className="mx-auto text-slate-400 mb-3 md:mb-4" size={40} />
-              <p className="text-white text-base md:text-lg mb-2">Drop files here or click to browse</p>
-              <p className="text-slate-400 text-xs md:text-sm">Supports .gpx and .fit files (max 10MB)</p>
+              <p className="text-white text-base md:text-lg mb-2">Arrastra archivos aquí o haz clic para explorar</p>
+              <p className="text-slate-400 text-xs md:text-sm">Soporta archivos .gpx y .fit (máx 10MB)</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -203,7 +203,7 @@ export function Files() {
             {selectedFiles.length > 0 && (
               <div className="mt-4 md:mt-6">
                 <h3 className="text-white font-semibold text-sm md:text-base mb-2 md:mb-3">
-                  Selected Files ({selectedFiles.length})
+                  Archivos Seleccionados ({selectedFiles.length})
                 </h3>
                 <div className="space-y-2 mb-3 md:mb-4">
                   {selectedFiles.map((file, index) => (
@@ -227,14 +227,14 @@ export function Files() {
                     className="flex-1 px-4 md:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                   >
                     <UploadIcon size={18} />
-                    {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`}
+                    {uploading ? 'Subiendo...' : `Subir ${selectedFiles.length} Archivo${selectedFiles.length > 1 ? 's' : ''}`}
                   </button>
                   <button
                     onClick={clearFiles}
                     disabled={uploading}
                     className="px-4 md:px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                   >
-                    Clear
+                    Limpiar
                   </button>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function Files() {
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-8 border border-slate-700 mb-4 md:mb-6">
               <h3 className="text-white font-semibold text-sm md:text-base mb-3 md:mb-4 flex items-center gap-2">
                 <Activity size={20} />
-                Upload Results
+                Resultados de Subida
               </h3>
               <div className="space-y-2 md:space-y-3">
                 {results.map((result, index) => (
@@ -290,7 +290,7 @@ export function Files() {
                         )}
                         {result.status === 'skipped' && (
                           <p className="text-slate-300 text-xs md:text-sm mt-1">
-                            Skipped: {result.reason || 'duplicate'}
+                            Omitido: {result.reason || 'duplicado'}
                           </p>
                         )}
                         {result.status === 'error' && (
@@ -306,16 +306,16 @@ export function Files() {
 
           {/* Supported Formats */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-8 border border-slate-700">
-            <h3 className="text-white font-semibold text-sm md:text-base mb-3 md:mb-4">Supported File Formats</h3>
+            <h3 className="text-white font-semibold text-sm md:text-base mb-3 md:mb-4">Formatos Soportados</h3>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-xs md:text-sm">.gpx</span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-white font-semibold text-sm md:text-base">GPS Exchange Format</h4>
+                  <h4 className="text-white font-semibold text-sm md:text-base">Formato GPS Exchange</h4>
                   <p className="text-slate-400 text-xs md:text-sm mt-1">
-                    GPX files from Garmin, Strava, and other GPS devices.
+                    Archivos GPX de Garmin, Strava y otros dispositivos GPS.
                   </p>
                 </div>
               </div>
@@ -324,9 +324,9 @@ export function Files() {
                   <span className="text-white font-bold text-xs md:text-sm">.fit</span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-white font-semibold text-sm md:text-base">FIT Protocol</h4>
+                  <h4 className="text-white font-semibold text-sm md:text-base">Protocolo FIT</h4>
                   <p className="text-slate-400 text-xs md:text-sm mt-1">
-                    FIT files from Garmin watches and bike computers.
+                    Archivos FIT de relojes Garmin y computadoras de bicicleta.
                   </p>
                 </div>
               </div>

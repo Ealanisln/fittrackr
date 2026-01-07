@@ -38,7 +38,7 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPEG and PNG are allowed.'));
+      cb(new Error('Tipo de archivo no válido. Solo se permiten JPEG y PNG.'));
     }
   }
 });
@@ -91,7 +91,7 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        error: 'No file uploaded'
+        error: 'No se subió ningún archivo'
       });
     }
 
@@ -155,7 +155,7 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
       ...workoutFields,
       elevationGainM: workoutFields.elevationGainM ?? 0,
       effortLevel: workoutFields.effortLevel ?? 5,
-      effortDescription: workoutFields.effortDescription ?? 'Moderate',
+      effortDescription: workoutFields.effortDescription ?? 'Moderado',
     };
 
     const workout = await prisma.workout.create({
@@ -206,7 +206,7 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
 
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to process screenshot'
+      error: error instanceof Error ? error.message : 'Error al procesar la captura'
     });
   }
 });

@@ -1,62 +1,59 @@
-import { createWorker } from 'tesseract.js';
+/**
+ * OCR Service - Uses Gemini Vision directly (no Tesseract)
+ * Optimized for faster processing
+ */
 
-interface OCRResult {
-  text: string;
-  confidence: number;
+interface WorkoutData {
+  date?: string;
+  workoutType?: string;
+  workoutTime?: string;
+  elapsedTime?: string;
+  distanceKm?: number;
+  activeKcal?: number;
+  totalKcal?: number;
+  elevationGainM?: number;
+  avgPace?: string;
+  avgHeartRateBpm?: number;
+  effortLevel?: number;
+  effortDescription?: string;
+  splits?: Array<{
+    splitNumber: number;
+    time: string;
+    pace: string;
+    heartRateBpm?: number;
+  }>;
 }
 
 /**
- * Extract text from image using Tesseract.js
+ * Parse workout data directly from image using Gemini Vision
+ * No OCR step needed - Gemini can read images directly
  */
-export async function extractTextFromImage(imagePath: string): Promise<OCRResult> {
-  const worker = await createWorker('eng');
-
-  try {
-    const { data: { text, confidence } } = await worker.recognize(imagePath);
-
-    return {
-      text: text.trim(),
-      confidence: Math.round(confidence)
-    };
-  } finally {
-    await worker.terminate();
-  }
-}
-
-/**
- * Parse workout data from OCR text using Gemini AI
- */
-export async function parseWorkoutWithGemini(ocrText: string, imageBuffer?: Buffer): Promise<any> {
+export async function parseWorkoutWithGemini(imageBuffer: Buffer): Promise<WorkoutData> {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured');
+    throw new Error('GEMINI_API_KEY no está configurado');
   }
 
-  // Use Gemini API to parse the workout data
   const currentYear = new Date().getFullYear();
-  const prompt = `
-You are a fitness tracking assistant. Analyze this screenshot of a workout and extract the following information in JSON format.
+  const prompt = `Analiza esta captura de pantalla de un entrenamiento y extrae la información en formato JSON.
 
-IMPORTANT: Today's date is ${new Date().toISOString().split('T')[0]}. If the screenshot only shows "Tue 21 Oct" without a year, assume it's from the current year ${currentYear}, NOT from past years.
+IMPORTANTE: La fecha de hoy es ${new Date().toISOString().split('T')[0]}. Si la captura solo muestra "Tue 21 Oct" sin año, asume que es del año actual ${currentYear}.
 
-Text extracted from image:
-${ocrText}
-
-Please extract and return a JSON object with this exact structure:
+Extrae y devuelve un objeto JSON con esta estructura exacta:
 {
   "date": "YYYY-MM-DD",
-  "workoutType": "string (e.g., 'Outdoor Walk', 'Run', 'Cycling')",
+  "workoutType": "string (ej: 'Caminata', 'Carrera', 'Ciclismo')",
   "workoutTime": "H:MM:SS",
-  "elapsedTime": "H:MM:SS (optional)",
+  "elapsedTime": "H:MM:SS (opcional)",
   "distanceKm": number,
   "activeKcal": number,
   "totalKcal": number,
   "elevationGainM": number,
-  "avgPace": "string (e.g., '8'49\"/km')",
+  "avgPace": "string (ej: '8'49\"/km')",
   "avgHeartRateBpm": number,
   "effortLevel": number (1-10),
-  "effortDescription": "string (Easy/Moderate/Hard)",
+  "effortDescription": "string (Fácil/Moderado/Intenso)",
   "splits": [
     {
       "splitNumber": number,
@@ -67,18 +64,23 @@ Please extract and return a JSON object with this exact structure:
   ]
 }
 
-Important rules:
-1. Extract ALL available data from the screenshot
-2. If a field is not found, omit it from the JSON
-3. Ensure all numbers are actual numbers, not strings
-4. Pace format must be exact: "MM'SS\\"" or "MM'SS\\"/km"
-5. Return ONLY the JSON object, no additional text
-6. If you see "splits" or "laps" data, include them all
+Reglas:
+1. Extrae TODOS los datos disponibles de la captura
+2. Si un campo no se encuentra, omítelo del JSON
+3. Los números deben ser números, no strings
+4. Devuelve SOLO el JSON, sin texto adicional
+5. Si hay datos de "splits" o "laps", inclúyelos todos
 
-Return the JSON now:
-`;
+Devuelve el JSON ahora:`;
+
+  // Create abort controller for timeout (60 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
+    console.log('🤖 Enviando imagen a Gemini Vision...');
+    const startTime = Date.now();
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -88,17 +90,15 @@ Return the JSON now:
         },
         body: JSON.stringify({
           contents: [{
-            parts: imageBuffer
-              ? [
-                  { text: prompt },
-                  {
-                    inline_data: {
-                      mime_type: 'image/jpeg',
-                      data: imageBuffer.toString('base64')
-                    }
-                  }
-                ]
-              : [{ text: prompt }]
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: 'image/jpeg',
+                  data: imageBuffer.toString('base64')
+                }
+              }
+            ]
           }],
           generationConfig: {
             temperature: 0.1,
@@ -106,87 +106,94 @@ Return the JSON now:
             topP: 1,
             maxOutputTokens: 8192,
           }
-        })
+        }),
+        signal: controller.signal
       }
     );
 
+    clearTimeout(timeoutId);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`⏱️ Gemini respondió en ${elapsed}s`);
+
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Gemini API error: ${error}`);
+      throw new Error(`Error de Gemini API: ${error}`);
     }
 
     const data = await response.json();
-    console.log('📋 Gemini API Response:', JSON.stringify(data, null, 2));
 
     // Check if we have candidates
     if (!data.candidates || data.candidates.length === 0) {
-      console.error('❌ No candidates in response:', data);
-      throw new Error(`No candidates in Gemini response. Full response: ${JSON.stringify(data)}`);
+      console.error('❌ No hay candidatos en la respuesta:', data);
+      throw new Error(`No hay candidatos en la respuesta de Gemini`);
     }
 
-    // Extract text from response - handle different response formats
+    // Extract text from response
     const candidate = data.candidates[0];
     let generatedText = candidate?.content?.parts?.[0]?.text;
 
-    // If no parts, try to get text from alternative locations
     if (!generatedText && candidate?.content?.text) {
       generatedText = candidate.content.text;
     }
 
     if (!generatedText) {
-      console.error('❌ No text in candidate:', candidate);
-      console.error('❌ Finish reason:', candidate?.finishReason);
-      throw new Error(`No response text from Gemini. Finish reason: ${candidate?.finishReason}`);
+      console.error('❌ No hay texto en el candidato:', candidate);
+      throw new Error(`Sin respuesta de Gemini. Razón: ${candidate?.finishReason}`);
     }
 
-    // Extract JSON from response (sometimes Gemini adds markdown code blocks)
+    // Extract JSON from response (Gemini sometimes adds markdown code blocks)
     const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Could not extract JSON from Gemini response');
+      throw new Error('No se pudo extraer JSON de la respuesta de Gemini');
     }
 
     let jsonString = jsonMatch[0];
 
-    // Log the raw JSON for debugging
-    console.log('📝 Raw JSON to parse:', jsonString);
-
-    // Clean up common JSON issues from Gemini
-    // Remove trailing commas before closing brackets/braces
+    // Clean up common JSON issues
     jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
-    // Replace single quotes with double quotes (if any)
-    // Only do this carefully - not inside already double-quoted strings
 
     try {
       const workoutData = JSON.parse(jsonString);
+      console.log('✅ Datos del entrenamiento extraídos correctamente');
       return workoutData;
     } catch (parseError) {
-      console.error('❌ JSON parse error. Raw string:', jsonString);
-      throw parseError;
+      console.error('❌ Error parseando JSON:', jsonString);
+      throw new Error('Error al parsear los datos del entrenamiento');
     }
   } catch (error) {
-    console.error('Error parsing with Gemini:', error);
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Timeout: Gemini tardó más de 60 segundos en responder');
+    }
+
+    console.error('Error en Gemini:', error);
     throw error;
   }
 }
 
 /**
- * Complete OCR + AI parsing workflow
+ * Process workout screenshot - simplified workflow without Tesseract
  */
 export async function processWorkoutScreenshot(imagePath: string, imageBuffer?: Buffer) {
-  console.log('📸 Starting OCR extraction...');
+  if (!imageBuffer) {
+    throw new Error('Se requiere el buffer de la imagen');
+  }
 
-  // Step 1: Extract text with Tesseract
-  const ocrResult = await extractTextFromImage(imagePath);
-  console.log(`✅ OCR completed with ${ocrResult.confidence}% confidence`);
-  console.log(`📝 Extracted text:\n${ocrResult.text.substring(0, 200)}...`);
+  console.log('📸 Procesando captura de entrenamiento...');
+  const startTime = Date.now();
 
-  // Step 2: Parse with Gemini AI
-  console.log('🤖 Parsing data with Gemini AI...');
-  const workoutData = await parseWorkoutWithGemini(ocrResult.text, imageBuffer);
-  console.log('✅ Workout data parsed successfully');
+  // Parse directly with Gemini Vision (no OCR step needed)
+  const workoutData = await parseWorkoutWithGemini(imageBuffer);
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`✅ Procesamiento completado en ${totalTime}s`);
 
   return {
-    ocrResult,
+    ocrResult: {
+      text: '', // No longer used but kept for compatibility
+      confidence: 100 // Gemini Vision is very accurate
+    },
     workoutData,
     source: 'SCREENSHOT' as const
   };

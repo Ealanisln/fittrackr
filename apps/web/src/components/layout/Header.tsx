@@ -11,9 +11,9 @@ export function Header() {
   };
 
   const navItems = [
-    { icon: Home, label: 'Dashboard', path: '/' },
-    { icon: Upload, label: 'Files', path: '/files' },
-    { icon: Link2, label: 'Integrations', path: '/integrations' },
+    { icon: Home, label: 'Inicio', path: '/' },
+    { icon: Upload, label: 'Archivos', path: '/files' },
+    { icon: Link2, label: 'Integraciones', path: '/integrations' },
   ];
 
   return (
@@ -63,7 +63,7 @@ export function Header() {
                   className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
                 >
                   <LogOut size={18} />
-                  <span className="text-sm">Logout</span>
+                  <span className="text-sm">Salir</span>
                 </button>
               </>
             )}

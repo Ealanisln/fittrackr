@@ -18,10 +18,10 @@ export function BottomNav() {
   };
 
   const navItems: NavItem[] = [
-    { icon: Home, label: 'Dashboard', path: '/' },
-    { icon: Upload, label: 'Files', path: '/files' },
-    { icon: Link2, label: 'Connect', path: '/integrations' },
-    { icon: User, label: 'Profile', path: '#logout', action: handleLogout },
+    { icon: Home, label: 'Inicio', path: '/' },
+    { icon: Upload, label: 'Archivos', path: '/files' },
+    { icon: Link2, label: 'Conectar', path: '/integrations' },
+    { icon: User, label: 'Perfil', path: '#logout', action: handleLogout },
   ];
 
   return (
@@ -47,7 +47,7 @@ export function BottomNav() {
                     isActive ? 'text-purple-400 font-medium' : 'text-slate-400'
                   }`}
                 >
-                  {session ? 'Logout' : item.label}
+                  {session ? 'Salir' : item.label}
                 </span>
               </button>
             );

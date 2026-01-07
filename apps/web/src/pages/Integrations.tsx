@@ -26,11 +26,11 @@ export function Integrations() {
     // Check for OAuth callback messages
     const stravaStatus = searchParams.get('strava');
     if (stravaStatus === 'connected') {
-      setMessage({ type: 'success', text: 'Strava connected successfully!' });
+      setMessage({ type: 'success', text: '¡Strava conectado exitosamente!' });
       // Clear message after 5 seconds
       setTimeout(() => setMessage(null), 5000);
     } else if (stravaStatus === 'error') {
-      setMessage({ type: 'error', text: 'Failed to connect Strava. Please try again.' });
+      setMessage({ type: 'error', text: 'Error al conectar Strava. Por favor intenta de nuevo.' });
       setTimeout(() => setMessage(null), 5000);
     }
   }, [searchParams]);
@@ -63,16 +63,16 @@ export function Integrations() {
         // Redirect to Strava authorization
         window.location.href = result.data.authUrl;
       } else {
-        setMessage({ type: 'error', text: 'Failed to generate Strava auth URL' });
+        setMessage({ type: 'error', text: 'Error al generar URL de autenticación de Strava' });
       }
     } catch (error) {
       console.error('Error connecting Strava:', error);
-      setMessage({ type: 'error', text: 'Failed to connect to Strava' });
+      setMessage({ type: 'error', text: 'Error al conectar con Strava' });
     }
   };
 
   const disconnectStrava = async () => {
-    if (!confirm('Are you sure you want to disconnect Strava? Your imported workouts will remain.')) {
+    if (!confirm('¿Seguro que deseas desconectar Strava? Tus entrenamientos importados se mantendrán.')) {
       return;
     }
 
@@ -84,14 +84,14 @@ export function Integrations() {
       const result = await response.json();
 
       if (result.success) {
-        setMessage({ type: 'success', text: 'Strava disconnected successfully' });
+        setMessage({ type: 'success', text: 'Strava desconectado exitosamente' });
         fetchIntegrations();
       } else {
-        setMessage({ type: 'error', text: 'Failed to disconnect Strava' });
+        setMessage({ type: 'error', text: 'Error al desconectar Strava' });
       }
     } catch (error) {
       console.error('Error disconnecting Strava:', error);
-      setMessage({ type: 'error', text: 'Failed to disconnect Strava' });
+      setMessage({ type: 'error', text: 'Error al desconectar Strava' });
     }
   };
 
@@ -113,14 +113,14 @@ export function Integrations() {
       if (result.success) {
         setMessage({
           type: 'success',
-          text: `Sync complete! Imported ${result.data.imported} activities, skipped ${result.data.skipped} duplicates`,
+          text: `¡Sincronización completa! ${result.data.imported} actividades importadas, ${result.data.skipped} duplicados omitidos`,
         });
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to sync activities' });
+        setMessage({ type: 'error', text: result.error || 'Error al sincronizar actividades' });
       }
     } catch (error) {
       console.error('Error syncing Strava:', error);
-      setMessage({ type: 'error', text: 'Failed to sync Strava activities' });
+      setMessage({ type: 'error', text: 'Error al sincronizar actividades de Strava' });
     } finally {
       setSyncing(false);
     }
@@ -133,7 +133,7 @@ export function Integrations() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-white text-xl">Loading...</div>
+          <div className="text-white text-xl">Cargando...</div>
         </div>
       </Layout>
     );
@@ -147,8 +147,8 @@ export function Integrations() {
           <div className="flex items-center gap-3 mb-6 md:mb-8">
             <Activity className="text-purple-400" size={32} />
             <div>
-              <h1 className="text-2xl md:text-4xl font-bold text-white">Integrations</h1>
-              <p className="text-sm md:text-base text-slate-400">Connect your fitness apps</p>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">Integraciones</h1>
+              <p className="text-sm md:text-base text-slate-400">Conecta tus apps de fitness</p>
             </div>
           </div>
 
@@ -183,8 +183,8 @@ export function Integrations() {
                   </h2>
                   <p className="text-slate-400 text-xs md:text-sm mt-1">
                     {isStravaConnected
-                      ? `Connected as ${stravaIntegration.metadata?.firstname}`
-                      : 'Connect your Strava account'}
+                      ? `Conectado como ${stravaIntegration.metadata?.firstname}`
+                      : 'Conecta tu cuenta de Strava'}
                   </p>
                 </div>
               </div>
@@ -198,14 +198,14 @@ export function Integrations() {
                       className="px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                     >
                       <RefreshCw className={syncing ? 'animate-spin' : ''} size={16} />
-                      {syncing ? 'Syncing...' : 'Sync'}
+                      {syncing ? 'Sincronizando...' : 'Sincronizar'}
                     </button>
                     <button
                       onClick={disconnectStrava}
                       className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                     >
                       <Unlink size={16} />
-                      Disconnect
+                      Desconectar
                     </button>
                   </>
                 ) : (
@@ -214,7 +214,7 @@ export function Integrations() {
                     className="px-4 md:px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-lg transition-all flex items-center justify-center gap-2 text-sm md:text-base"
                   >
                     <LinkIcon size={16} />
-                    Connect Strava
+                    Conectar Strava
                   </button>
                 )}
               </div>
@@ -222,19 +222,19 @@ export function Integrations() {
 
             {isStravaConnected && (
               <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-slate-700">
-                <h3 className="text-white font-semibold text-sm md:text-base mb-2 md:mb-3">What gets imported:</h3>
+                <h3 className="text-white font-semibold text-sm md:text-base mb-2 md:mb-3">Qué se importa:</h3>
                 <ul className="space-y-1 md:space-y-2 text-slate-300 text-xs md:text-sm">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="text-green-400 flex-shrink-0" size={14} />
-                    All activities (runs, walks, cycling)
+                    Todas las actividades (carreras, caminatas, ciclismo)
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="text-green-400 flex-shrink-0" size={14} />
-                    Distance, pace, elevation, heart rate
+                    Distancia, ritmo, elevación, frecuencia cardíaca
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="text-green-400 flex-shrink-0" size={14} />
-                    Activity timestamps and duration
+                    Fechas y duración de actividades
                   </li>
                 </ul>
               </div>
@@ -253,11 +253,11 @@ export function Integrations() {
                 <h2 className="text-lg md:text-2xl font-bold text-white flex flex-wrap items-center gap-2">
                   Garmin Connect
                   <span className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded">
-                    Coming Soon
+                    Próximamente
                   </span>
                 </h2>
                 <p className="text-slate-400 text-xs md:text-sm mt-1">
-                  Garmin integration coming soon
+                  Integración con Garmin próximamente
                 </p>
               </div>
             </div>

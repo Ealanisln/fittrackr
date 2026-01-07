@@ -66,7 +66,7 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
       }
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to upload');
+        throw new Error(result.error || 'Error al subir');
       }
 
       console.log('Upload successful:', result.data);
@@ -87,7 +87,7 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
 
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upload screenshot');
+      setError(err instanceof Error ? err.message : 'Error al subir la captura');
     } finally {
       setUploading(false);
     }
@@ -129,7 +129,7 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
     <div className="bg-slate-800 rounded-xl p-4 md:p-6 shadow-xl">
       <h2 className="text-lg md:text-2xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
         <Upload className="text-blue-500" size={20} />
-        Upload Workout Screenshot
+        Subir Captura de Entrenamiento
       </h2>
 
       <div className="space-y-3 md:space-y-4">
@@ -164,9 +164,9 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
           {uploading ? (
             <div className="flex flex-col items-center gap-2 md:gap-3">
               <Loader2 className="w-10 h-10 md:w-12 md:h-12 text-blue-500 animate-spin" />
-              <p className="text-white font-medium text-sm md:text-base">Processing screenshot...</p>
+              <p className="text-white font-medium text-sm md:text-base">Procesando captura...</p>
               <p className="text-slate-400 text-xs md:text-sm">
-                Extracting workout data with AI
+                Extrayendo datos con IA
               </p>
             </div>
           ) : duplicateInfo ? (
@@ -212,15 +212,15 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
           ) : success ? (
             <div className="flex flex-col items-center gap-2 md:gap-3">
               <CheckCircle2 className="w-10 h-10 md:w-12 md:h-12 text-green-500" />
-              <p className="text-white font-medium text-sm md:text-base">Workout added successfully!</p>
+              <p className="text-white font-medium text-sm md:text-base">¡Entrenamiento agregado!</p>
               <p className="text-slate-400 text-xs md:text-sm">
-                Check your dashboard
+                Revisa tu dashboard
               </p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 md:gap-3">
               <XCircle className="w-10 h-10 md:w-12 md:h-12 text-red-500" />
-              <p className="text-white font-medium text-sm md:text-base">Upload failed</p>
+              <p className="text-white font-medium text-sm md:text-base">Error al subir</p>
               <p className="text-red-400 text-xs md:text-sm">{error}</p>
               <button
                 onClick={(e) => {
@@ -230,17 +230,17 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
                 }}
                 className="mt-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm"
               >
-                Try again
+                Intentar de nuevo
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 md:gap-3">
               <ImageIcon className="w-10 h-10 md:w-12 md:h-12 text-slate-500" />
               <p className="text-white font-medium text-sm md:text-base">
-                {preview ? 'Click to change image' : 'Click to upload screenshot'}
+                {preview ? 'Clic para cambiar imagen' : 'Clic para subir captura'}
               </p>
               <p className="text-slate-400 text-xs md:text-sm">
-                Supports: JPG, PNG (max 5MB)
+                Soporta: JPG, PNG (máx 5MB)
               </p>
             </div>
           )}
@@ -249,7 +249,7 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
         {/* Info */}
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 md:p-4">
           <p className="text-blue-400 text-xs md:text-sm">
-            <span className="font-bold">Tip:</span> Upload a clear screenshot of your workout summary. AI will extract all the details!
+            <span className="font-bold">Tip:</span> Sube una captura clara del resumen de tu entrenamiento. ¡La IA extraerá todos los datos!
           </p>
         </div>
       </div>

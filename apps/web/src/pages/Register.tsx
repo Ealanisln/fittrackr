@@ -20,13 +20,13 @@ export function Register() {
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
     // Validate password length
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
@@ -40,14 +40,14 @@ export function Register() {
       });
 
       // Show success message
-      setSuccess('Account created successfully! Redirecting to dashboard...');
+      setSuccess('¡Cuenta creada exitosamente! Redirigiendo al dashboard...');
 
       // Redirect to dashboard after showing success message
       setTimeout(() => {
         navigate('/');
       }, 1500);
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      setError(err.message || 'Error al crear la cuenta');
     } finally {
       setLoading(false);
     }
@@ -62,12 +62,12 @@ export function Register() {
             <Activity className="text-purple-400" size={32} />
             <h1 className="text-2xl md:text-4xl font-bold text-white">FitTrackr</h1>
           </div>
-          <p className="text-slate-400 text-sm md:text-base">Track your fitness journey</p>
+          <p className="text-slate-400 text-sm md:text-base">Tu compañero de entrenamiento</p>
         </div>
 
         {/* Register Form */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-slate-700">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Create Account</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Crear Cuenta</h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
@@ -84,7 +84,7 @@ export function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
-                Full Name
+                Nombre completo
               </label>
               <input
                 id="name"
@@ -92,14 +92,14 @@ export function Register() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="John Doe"
+                placeholder="Tu nombre"
                 required
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
-                Email
+                Correo electrónico
               </label>
               <input
                 id="email"
@@ -107,14 +107,14 @@ export function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="you@example.com"
+                placeholder="tu@email.com"
                 required
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                Password
+                Contraseña
               </label>
               <input
                 id="password"
@@ -126,12 +126,12 @@ export function Register() {
                 required
                 minLength={8}
               />
-              <p className="mt-1 text-xs text-slate-400">Must be at least 8 characters</p>
+              <p className="mt-1 text-xs text-slate-400">Mínimo 8 caracteres</p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
-                Confirm Password
+                Confirmar Contraseña
               </label>
               <input
                 id="confirmPassword"
@@ -149,18 +149,18 @@ export function Register() {
               disabled={loading}
               className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-slate-400 text-sm">
-              Already have an account?{' '}
+              ¿Ya tienes cuenta?{' '}
               <button
                 onClick={() => navigate('/login')}
                 className="text-purple-400 hover:text-purple-300 font-medium"
               >
-                Sign in
+                Iniciar sesión
               </button>
             </p>
           </div>
