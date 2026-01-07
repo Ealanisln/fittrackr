@@ -20,11 +20,17 @@ export async function requireAuth(
   next: NextFunction
 ) {
   try {
+    // Debug: Log all cookies received
+    console.log('🍪 Cookies received:', req.headers.cookie);
+    console.log('🌐 Origin:', req.headers.origin);
+
     // Get the session token from cookies
     const token = req.headers.cookie
       ?.split('; ')
       .find(row => row.startsWith('better-auth.session_token='))
       ?.split('=')[1];
+
+    console.log('🔑 Token found:', token ? 'yes' : 'no');
 
     if (!token) {
       return res.status(401).json({
