@@ -39,6 +39,10 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
     setSuccess(false);
     setDuplicateInfo(null);
 
+    // Create abort controller for timeout (90 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
     try {
       const formData = new FormData();
       formData.append('screenshot', file);
@@ -46,13 +50,20 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
         formData.append('force', 'true');
       }
 
+      console.log('📤 Uploading screenshot to:', `${API_URL}/api/upload`);
+
       const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+      console.log('📥 Response status:', response.status);
+
       const result = await response.json();
+      console.log('📥 Response data:', result);
 
       // Handle duplicate detection (409 Conflict)
       if (response.status === 409 && result.isDuplicate) {
@@ -86,8 +97,14 @@ export function UploadWorkout({ onUploadComplete }: UploadWorkoutProps) {
       }
 
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Error al subir la captura');
+
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Tiempo de espera agotado. Intenta de nuevo.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Error al subir la captura');
+      }
     } finally {
       setUploading(false);
     }
