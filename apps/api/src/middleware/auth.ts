@@ -24,11 +24,14 @@ export async function requireAuth(
     console.log('🍪 Cookies received:', req.headers.cookie);
     console.log('🌐 Origin:', req.headers.origin);
 
-    // Get the session token from cookies
+    // Get the session token from cookies (check both secure and non-secure variants)
+    const cookieName = 'better-auth.session_token';
+    const secureCookieName = '__Secure-better-auth.session_token';
+
     const token = req.headers.cookie
       ?.split('; ')
-      .find(row => row.startsWith('better-auth.session_token='))
-      ?.split('=')[1];
+      .find(row => row.startsWith(`${secureCookieName}=`) || row.startsWith(`${cookieName}=`))
+      ?.split('=').slice(1).join('='); // Handle tokens with = in them
 
     console.log('🔑 Token found:', token ? 'yes' : 'no');
 
