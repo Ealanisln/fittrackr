@@ -109,10 +109,20 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
     const { splits, ...workoutFields } = result.workoutData;
 
     // Parse date avoiding timezone issues by treating it as noon local time
-    const dateStr = result.workoutData.date;
-    const workoutDate = dateStr.includes('T')
+    const dateStr = result.workoutData.date || new Date().toISOString().split('T')[0];
+    let workoutDate = dateStr.includes('T')
       ? new Date(dateStr)
       : new Date(`${dateStr}T12:00:00`);
+
+    // Auto-correct future dates: if the OCR extracted a future date, assume it's from last year
+    // This handles cases where screenshots show "Dec 2" but no year, and we're now in January
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (workoutDate > today) {
+      console.log(`⚠️ Future date detected: ${workoutDate.toISOString()}`);
+      workoutDate.setFullYear(workoutDate.getFullYear() - 1);
+      console.log(`✅ Date corrected to: ${workoutDate.toISOString()}`);
+    }
 
     // Check for potential duplicates (unless force flag is set)
     if (!forceUpload) {

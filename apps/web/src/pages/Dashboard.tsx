@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, Area, ReferenceLine, Cell } from 'recharts';
-import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2 } from 'lucide-react';
+import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2, Pencil } from 'lucide-react';
 import { Layout } from '../components/layout';
 import { StatCard } from '../components/dashboard/StatCard';
 import { UploadWorkout } from '../components/UploadWorkout';
 import { API_URL, fetchInsights } from '../lib/api';
+import { EditWorkoutModal } from '../components/EditWorkoutModal';
 import type { Workout, InsightsResponse } from '../types/workout';
 
 export function Dashboard() {
@@ -14,6 +15,7 @@ export function Dashboard() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(true);
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     // Fetch workouts from API
@@ -201,6 +203,13 @@ export function Dashboard() {
     } finally {
       setDeleting(null);
     }
+  };
+
+  // Handler para actualizar workout después de edición
+  const handleWorkoutUpdate = (updatedWorkout: Workout) => {
+    setWorkouts(workouts.map(w =>
+      w.id === updatedWorkout.id ? updatedWorkout : w
+    ));
   };
 
   // Cálculos de estadísticas
@@ -698,6 +707,13 @@ export function Dashboard() {
                           {workout.effortDescription}
                         </span>
                         <button
+                          onClick={() => setEditingWorkout(workout)}
+                          className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors touch-target"
+                          title="Editar fecha"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
                           onClick={() => handleDelete(workout.id)}
                           disabled={deleting === workout.id}
                           className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
@@ -798,6 +814,16 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Modal de edición de workout */}
+      {editingWorkout && (
+        <EditWorkoutModal
+          workout={editingWorkout}
+          isOpen={!!editingWorkout}
+          onClose={() => setEditingWorkout(null)}
+          onSave={handleWorkoutUpdate}
+        />
+      )}
     </Layout>
   );
 }
