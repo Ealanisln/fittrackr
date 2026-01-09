@@ -37,7 +37,7 @@ test.describe('Authentication', () => {
     await page.goto('/login');
 
     // Look for registration link
-    const registerLink = page.getByRole('link', { name: /registrar|register|crear cuenta|sign up/i });
+    const registerLink = page.getByRole('link', { name: /regístrate|registrar|register|crear cuenta|sign up/i });
     await expect(registerLink).toBeVisible();
   });
 
@@ -45,7 +45,7 @@ test.describe('Authentication', () => {
     await page.goto('/login');
 
     // Click registration link
-    await page.getByRole('link', { name: /registrar|register|crear cuenta|sign up/i }).click();
+    await page.getByRole('link', { name: /regístrate|registrar|register|crear cuenta|sign up/i }).click();
 
     // Should be on registration page
     await expect(page).toHaveURL(/register/);

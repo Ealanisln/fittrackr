@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signIn } from '../lib/auth-client';
 import { Activity } from 'lucide-react';
 
@@ -102,12 +102,12 @@ export function Login() {
           <div className="mt-6 text-center">
             <p className="text-slate-400 text-sm">
               ¿No tienes cuenta?{' '}
-              <button
-                onClick={() => navigate('/register')}
+              <Link
+                to="/register"
                 className="text-purple-400 hover:text-purple-300 font-medium"
               >
                 Regístrate
-              </button>
+              </Link>
             </p>
           </div>
         </div>
