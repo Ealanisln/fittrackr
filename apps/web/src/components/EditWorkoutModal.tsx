@@ -64,7 +64,7 @@ export function EditWorkoutModal({ workout, isOpen, onClose, onSave }: EditWorko
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-slate-800 rounded-xl w-full max-w-md shadow-2xl border border-slate-700">
+      <div className="bg-slate-800 rounded-xl w-full max-w-md shadow-2xl border border-slate-700 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-700">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -106,7 +106,9 @@ export function EditWorkoutModal({ workout, isOpen, onClose, onSave }: EditWorko
               max={new Date().toISOString().split('T')[0]}
               className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                         appearance-none text-center
+                         [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert
+                         [&::-webkit-date-and-time-value]:text-white"
             />
           </div>
 

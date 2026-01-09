@@ -168,6 +168,10 @@ Responde SOLO con un JSON así:
 }
 `;
 
+  // Add timeout to prevent Gateway Timeout (30 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
@@ -181,8 +185,11 @@ Responde SOLO con un JSON así:
             maxOutputTokens: 8192,
           },
         }),
+        signal: controller.signal,
       }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.text();
@@ -255,6 +262,10 @@ Responde SOLO con un JSON array así:
 ]
 `;
 
+  // Add timeout to prevent Gateway Timeout (30 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
@@ -268,8 +279,11 @@ Responde SOLO con un JSON array así:
             maxOutputTokens: 8192,
           },
         }),
+        signal: controller.signal,
       }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.text();
