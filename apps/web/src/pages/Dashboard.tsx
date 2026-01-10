@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, Area, ReferenceLine, Cell } from 'recharts';
 import { Activity, TrendingUp, Heart, Flame, Mountain, Trash2, Pencil } from 'lucide-react';
 import { Layout } from '../components/layout';
@@ -17,142 +17,63 @@ export function Dashboard() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
 
-  useEffect(() => {
-    // Fetch workouts from API
-    const fetchData = async () => {
-      try {
-        console.log('🔍 Fetching workouts from API...');
-        const response = await fetch(`${API_URL}/api/workouts`, {
-          credentials: 'include', // Send cookies for authentication
-        });
-        console.log('📡 Response status:', response.status);
-        const result = await response.json();
-        console.log('📦 API Result:', result);
+  // Función para recargar los workouts desde la API
+  const fetchWorkouts = useCallback(async () => {
+    try {
+      console.log('🔍 Fetching workouts from API...');
+      const response = await fetch(`${API_URL}/api/workouts`, {
+        credentials: 'include',
+      });
+      console.log('📡 Response status:', response.status);
+      const result = await response.json();
+      console.log('📦 API Result:', result);
 
-        if (result.success) {
-          console.log('✅ Setting workouts:', result.data.length, 'workouts');
-          setWorkouts(result.data);
-        } else {
-          console.warn('⚠️ API returned success=false');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching workouts:', error);
-        // Fallback to mock data
-        const mockWorkouts: Workout[] = [
-      {
-        id: '1',
-        date: "2025-10-13",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:37:44",
-        distanceKm: 4.28,
-        activeKcal: 260,
-        totalKcal: 311,
-        elevationGainM: 102,
-        avgPace: "8'49\"",
-        avgHeartRateBpm: 150,
-        effortLevel: 7,
-        effortDescription: "Hard",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '2',
-        date: "2025-10-10",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:39:06",
-        distanceKm: 4.25,
-        activeKcal: 254,
-        totalKcal: 306,
-        elevationGainM: 104,
-        avgPace: "9'11\"",
-        avgHeartRateBpm: 150,
-        effortLevel: 8,
-        effortDescription: "Hard",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '3',
-        date: "2025-10-07",
-        workoutType: "Outdoor Walk",
-        workoutTime: "1:21:48",
-        distanceKm: 6.87,
-        activeKcal: 423,
-        totalKcal: 533,
-        elevationGainM: 88,
-        avgPace: "11'54\"",
-        avgHeartRateBpm: 140,
-        effortLevel: 7,
-        effortDescription: "Hard",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '4',
-        date: "2025-10-02",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:43:13",
-        distanceKm: 4.07,
-        activeKcal: 240,
-        totalKcal: 299,
-        elevationGainM: 102,
-        avgPace: "10'36\"",
-        avgHeartRateBpm: 132,
-        effortLevel: 5,
-        effortDescription: "Moderate",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '5',
-        date: "2025-09-30",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:44:55",
-        distanceKm: 4.22,
-        activeKcal: 253,
-        totalKcal: 313,
-        elevationGainM: 102,
-        avgPace: "10'38\"",
-        avgHeartRateBpm: 139,
-        effortLevel: 7,
-        effortDescription: "Hard",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '6',
-        date: "2025-09-29",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:47:30",
-        distanceKm: 4.44,
-        activeKcal: 260,
-        totalKcal: 323,
-        elevationGainM: 110,
-        avgPace: "10'41\"",
-        avgHeartRateBpm: 132,
-        effortLevel: 7,
-        effortDescription: "Hard",
-        source: "SCREENSHOT"
-      },
-      {
-        id: '7',
-        date: "2025-09-25",
-        workoutType: "Outdoor Walk",
-        workoutTime: "0:43:36",
-        distanceKm: 2.52,
-        activeKcal: 140,
-        totalKcal: 199,
-        elevationGainM: 42,
-        avgPace: "17'15\"",
-        avgHeartRateBpm: 121,
-        effortLevel: 6,
-        effortDescription: "Moderate",
-        source: "SCREENSHOT"
+      if (result.success) {
+        console.log('✅ Setting workouts:', result.data.length, 'workouts');
+        setWorkouts(result.data);
+        return result.data;
+      } else {
+        console.warn('⚠️ API returned success=false');
+        return [];
       }
-        ];
-        setWorkouts(mockWorkouts);
-      } finally {
-        setLoading(false);
-      }
+    } catch (error) {
+      console.error('❌ Error fetching workouts:', error);
+      return [];
+    }
+  }, []);
+
+  // Función para recargar insights
+  const refreshInsights = useCallback(async () => {
+    setInsightsLoading(true);
+    try {
+      const data = await fetchInsights();
+      setInsights(data);
+    } catch (error) {
+      console.error('Error fetching insights:', error);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }, []);
+
+  // Función para refrescar todos los datos después de un upload
+  const handleUploadComplete = useCallback(async () => {
+    console.log('🔄 Refreshing data after upload...');
+    const newWorkouts = await fetchWorkouts();
+    if (newWorkouts.length > 0) {
+      await refreshInsights();
+    }
+    setView('overview');
+  }, [fetchWorkouts, refreshInsights]);
+
+  useEffect(() => {
+    // Fetch inicial de workouts
+    const fetchData = async () => {
+      await fetchWorkouts();
+      setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [fetchWorkouts]);
 
   // Fetch insights when workouts are loaded
   useEffect(() => {
@@ -749,9 +670,7 @@ export function Dashboard() {
 
           {view === 'upload' && (
             <UploadWorkout
-              onUploadComplete={() => {
-                window.location.reload();
-              }}
+              onUploadComplete={handleUploadComplete}
             />
           )}
 
