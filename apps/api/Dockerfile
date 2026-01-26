@@ -26,9 +26,12 @@ RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 # Expose port
 EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check - use /health/ready for proper readiness verification
+# start-period=60s: allows time for Prisma generation + DB connection
+# timeout=5s: enough time for DB query under load
+# retries=5: tolerate temporary network issues
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+  CMD node -e "require('http').get('http://localhost:3001/health/ready', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"
 
 # Start the application with the start script (runs as root to generate Prisma client)
 CMD ["/app/start.sh"]

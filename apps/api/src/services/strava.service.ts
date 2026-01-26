@@ -1,9 +1,17 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { prisma } from '@fittrack/database';
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 const STRAVA_API_BASE = 'https://www.strava.com/api/v3';
+
+// Create axios instance with default timeout for all Strava API calls
+const stravaAxios: AxiosInstance = axios.create({
+  timeout: 15000, // 15 second timeout
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 interface StravaTokenResponse {
   token_type: string;
@@ -69,7 +77,7 @@ export async function exchangeStravaCode(code: string): Promise<StravaTokenRespo
     throw new Error('Strava credentials not configured');
   }
 
-  const response = await axios.post<StravaTokenResponse>(STRAVA_TOKEN_URL, {
+  const response = await stravaAxios.post<StravaTokenResponse>(STRAVA_TOKEN_URL, {
     client_id: clientId,
     client_secret: clientSecret,
     code,
@@ -90,7 +98,7 @@ export async function refreshStravaToken(refreshToken: string): Promise<StravaTo
     throw new Error('Strava credentials not configured');
   }
 
-  const response = await axios.post<StravaTokenResponse>(STRAVA_TOKEN_URL, {
+  const response = await stravaAxios.post<StravaTokenResponse>(STRAVA_TOKEN_URL, {
     client_id: clientId,
     client_secret: clientSecret,
     refresh_token: refreshToken,
@@ -167,7 +175,7 @@ export async function fetchStravaActivities(
     params.before = Math.floor(options.before.getTime() / 1000);
   }
 
-  const response = await axios.get<StravaActivity[]>(
+  const response = await stravaAxios.get<StravaActivity[]>(
     `${STRAVA_API_BASE}/athlete/activities`,
     {
       headers: {

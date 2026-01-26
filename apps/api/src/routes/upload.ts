@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import { prisma } from '@fittrack/database';
 import { processWorkoutScreenshot } from '../services/ocr.service.js';
 import { requireAuth } from '../middleware/auth';
@@ -9,16 +10,15 @@ import { generateInsightsForUser } from '../services/insights.service.js';
 
 const router = Router();
 
+// Ensure upload directory exists at startup (async)
+const uploadDir = process.env.UPLOAD_DIR || './uploads';
+fsPromises.mkdir(uploadDir, { recursive: true }).catch((err) => {
+  console.error('Failed to create upload directory:', err);
+});
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = process.env.UPLOAD_DIR || './uploads';
-
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -99,8 +99,8 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
 
     console.log(`📤 Processing screenshot: ${req.file.filename}`);
 
-    // Read image buffer for Gemini vision
-    const imageBuffer = fs.readFileSync(req.file.path);
+    // Read image buffer for Gemini vision (async)
+    const imageBuffer = await fsPromises.readFile(req.file.path);
 
     // Process with OCR + Gemini
     const result = await processWorkoutScreenshot(req.file.path, imageBuffer);
@@ -209,9 +209,14 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
   } catch (error) {
     console.error('Error processing upload:', error);
 
-    // Clean up uploaded file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    // Clean up uploaded file on error (async)
+    if (req.file) {
+      fsPromises.unlink(req.file.path).catch((unlinkErr) => {
+        // Ignore ENOENT errors (file doesn't exist)
+        if ((unlinkErr as NodeJS.ErrnoException).code !== 'ENOENT') {
+          console.error('Failed to clean up uploaded file:', unlinkErr);
+        }
+      });
     }
 
     res.status(500).json({
@@ -222,15 +227,23 @@ router.post('/', requireAuth, upload.single('screenshot'), async (req, res) => {
 });
 
 // GET /api/upload/status - Check upload service status
-router.get('/status', (req, res) => {
-  const uploadDir = process.env.UPLOAD_DIR || './uploads';
+router.get('/status', async (req, res) => {
   const hasGeminiKey = !!process.env.GEMINI_API_KEY;
+
+  // Check if upload directory exists (async)
+  let uploadDirExists = false;
+  try {
+    await fsPromises.access(uploadDir, fs.constants.F_OK);
+    uploadDirExists = true;
+  } catch {
+    uploadDirExists = false;
+  }
 
   res.json({
     success: true,
     data: {
       uploadDir,
-      uploadDirExists: fs.existsSync(uploadDir),
+      uploadDirExists,
       geminiConfigured: hasGeminiKey,
       maxFileSize: process.env.MAX_FILE_SIZE || '5242880'
     }
